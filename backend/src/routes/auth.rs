@@ -1,33 +1,31 @@
 use std::fmt;
-use std::fmt::{Display, Formatter, Write};
-use std::ops::Add;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant, SystemTime, SystemTimeError, UNIX_EPOCH};
-use actix_web::{post, HttpResponse, Responder, ResponseError, web};
-use actix_web::body::BoxBody;
+use std::fmt::{Display, Formatter};
+use std::time::{Duration, UNIX_EPOCH};
+
+use actix_web::{HttpResponse, post, ResponseError};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
+use derive_more::Error;
 use serde::{Deserialize, Serialize};
-use derive_more::{Display, Error};
-use log::info;
-use serde::de::Unexpected::Str;
-use crate::AuthStore;
+
+use crate::stores::auth::AuthStoreData;
+use crate::utils::JsonResult;
 
 #[derive(Deserialize)]
-struct AuthRequest {
+pub struct AuthRequest {
     username: String,
     password: String,
 }
 
 #[derive(Serialize)]
-struct AuthResponse {
+pub struct AuthResponse {
     token: String,
     expiry_time: u128,
 }
 
 #[derive(Debug, Error)]
-enum AuthError {
+pub enum AuthError {
     InvalidCredentials,
     InternalServerError,
 }
@@ -56,37 +54,25 @@ impl ResponseError for AuthError {
     }
 }
 
-
 #[post("/api/auth")]
-pub async fn auth(body: Json<AuthRequest>, auth_store: web::Data<Arc<Mutex<AuthStore>>>) -> Result<Json<AuthResponse>, AuthError> {
+pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonResult<AuthResponse, AuthError> {
     let mut auth_store = auth_store.lock()
-        .expect("Failed to get mutable auth store ref");
+        .map_err(|_| AuthError::InternalServerError)?;
 
+    let is_credentials = auth_store.is_credentials(&body.username, &body.password);
 
-    info!("Auth Request");
+    if is_credentials {
+        let token_data = auth_store.create_token()
+            .map_err(|_| AuthError::InternalServerError)?;
+        let time_elapsed = token_data
+            .expiry_time
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or(Duration::from_millis(0));
 
-    let valid = auth_store.is_valid_credentials(
-        &body.username,
-        &body.password,
-    );
-
-    if valid {
-        let create = auth_store.create_token();
-        match create {
-            Some((token, expiry_time)) => {
-                let time_elapsed = expiry_time.duration_since(UNIX_EPOCH);
-                match time_elapsed {
-                    Ok(time_elapsed) => {
-                        Ok(Json(AuthResponse {
-                            token,
-                            expiry_time: time_elapsed.as_millis(),
-                        }))
-                    }
-                    Err(_) => Err(AuthError::InternalServerError)
-                }
-            }
-            None => Err(AuthError::InternalServerError)
-        }
+        Ok(Json(AuthResponse {
+            token: token_data.token,
+            expiry_time: time_elapsed.as_millis(),
+        }))
     } else {
         Err(AuthError::InvalidCredentials)
     }
