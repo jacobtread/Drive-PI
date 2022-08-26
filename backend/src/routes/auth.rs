@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::time::{Duration, UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
 use actix_web::{HttpResponse, post, ResponseError};
 use actix_web::http::header::ContentType;
@@ -67,7 +67,7 @@ pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonRes
         let time_elapsed = token_data
             .expiry_time
             .duration_since(UNIX_EPOCH)
-            .unwrap_or(Duration::from_millis(0));
+            .map_err(|_| AuthError::InternalServerError)?;
 
         Ok(Json(AuthResponse {
             token: token_data.token,
