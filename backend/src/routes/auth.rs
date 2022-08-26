@@ -1,42 +1,23 @@
-use std::fmt;
-use std::fmt::{Display, Formatter};
 use std::time::UNIX_EPOCH;
 
-use actix_web::{HttpResponse, post, ResponseError};
+use actix_web::{get, HttpResponse, post, ResponseError, web};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
-use actix_web::web::Json;
-use derive_more::Error;
+use actix_web::web::{Json, scope};
+use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
+use crate::middleware::auth::AuthMiddleware;
 
-use crate::stores::auth::AuthStoreData;
+use crate::stores::auth::{AuthStoreData, AuthStoreSafe};
 use crate::utils::JsonResult;
 
-#[derive(Deserialize)]
-pub struct AuthRequest {
-    username: String,
-    password: String,
-}
-
-#[derive(Serialize)]
-pub struct AuthResponse {
-    token: String,
-    expiry_time: u128,
-}
-
-#[derive(Debug, Error)]
+/// Errors for the authentication endpoint
+#[derive(Debug, Display, Error)]
 pub enum AuthError {
+    #[display(fmt = "invalid credentials")]
     InvalidCredentials,
+    #[display(fmt = "internal server error")]
     InternalServerError,
-}
-
-impl Display for AuthError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            AuthError::InvalidCredentials => f.write_str("invalid credentials"),
-            AuthError::InternalServerError => f.write_str("internal server error")
-        }
-    }
 }
 
 impl ResponseError for AuthError {
@@ -54,8 +35,20 @@ impl ResponseError for AuthError {
     }
 }
 
-#[post("/api/auth")]
-pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonResult<AuthResponse, AuthError> {
+#[derive(Deserialize)]
+pub struct AuthRequest {
+    username: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+pub struct TokenDataResponse {
+    token: String,
+    expiry_time: u128,
+}
+
+#[post("/auth")]
+pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonResult<TokenDataResponse, AuthError> {
     let mut auth_store = auth_store.lock()
         .map_err(|_| AuthError::InternalServerError)?;
 
@@ -69,11 +62,34 @@ pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonRes
             .duration_since(UNIX_EPOCH)
             .map_err(|_| AuthError::InternalServerError)?;
 
-        Ok(Json(AuthResponse {
+        Ok(Json(TokenDataResponse {
             token: token_data.token,
             expiry_time: time_elapsed.as_millis(),
         }))
     } else {
         Err(AuthError::InvalidCredentials)
     }
+}
+
+#[derive(Serialize)]
+pub struct ProtectedResponse {
+    message: String,
+}
+
+#[get("/test")]
+pub async fn protected() -> JsonResult<ProtectedResponse, AuthError> {
+    Ok(Json(ProtectedResponse {
+        message: "Success Protected Route Hit".to_string()
+    }))
+}
+
+
+pub fn init_routes(cfg: &mut web::ServiceConfig, auth_store: AuthStoreSafe) {
+    cfg
+        .service(auth)
+        .service(
+        scope("/protected")
+                .wrap(AuthMiddleware::new(auth_store))
+                .service(protected)
+         );
 }

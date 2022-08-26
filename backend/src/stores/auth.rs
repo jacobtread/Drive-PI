@@ -45,7 +45,8 @@ pub struct TokenData {
     pub expiry_time: SystemTime,
 }
 
-pub type AuthStoreData = Data<Arc<Mutex<AuthStore>>>;
+pub type AuthStoreSafe = Arc<Mutex<AuthStore>>;
+pub type AuthStoreData = Data<AuthStoreSafe>;
 
 impl AuthStore {
     /// Creates a new instance of the auth store using the
