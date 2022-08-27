@@ -1,10 +1,9 @@
 use std::time::UNIX_EPOCH;
 
 use actix_web::{get, post, web};
-use actix_web::web::{Json, scope};
+use actix_web::web::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::middleware::auth::AuthMiddleware;
 use crate::models::errors::{AuthError, server_error};
 use crate::routes::auth_scope;
 use crate::stores::auth::{AuthStoreData, AuthStoreSafe};
