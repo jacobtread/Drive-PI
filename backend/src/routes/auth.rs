@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::middleware::auth::AuthMiddleware;
 use crate::models::errors::{AuthError, server_error};
+use crate::routes::auth_scope;
 use crate::stores::auth::{AuthStoreData, AuthStoreSafe};
 use crate::utils::JsonResult;
 
@@ -61,8 +62,7 @@ pub fn init_routes(cfg: &mut web::ServiceConfig, auth_store: AuthStoreSafe) {
     cfg
         .service(auth)
         .service(
-            scope("/protected")
-                .wrap(AuthMiddleware::new(auth_store))
+            auth_scope(auth_store)
                 .service(protected)
         );
 }

@@ -16,6 +16,7 @@ pub struct AuthMiddleware {
 }
 
 impl AuthMiddleware {
+    // Constructor function for creating a new middleware
     pub fn new(auth_store: AuthStoreSafe) -> Self { Self { auth_store } }
 }
 
