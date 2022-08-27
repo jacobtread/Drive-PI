@@ -7,7 +7,6 @@ This document contains the planned routes for the server API
 - Auth **POST** (/api/auth)
 - Check Token **POST** (/api/auth/check)
 - List Drives **GET** (/api/drives)
-- Mount Drive **POST** (/api/drives)
 - Unmount Drive **DELETE** (/api/drives/{drive})
 - List Files **GET** (/api/files/{drive}/{folder_path})
 - View File **GET** (/api/files/{drive}/{folder_path}/${file})

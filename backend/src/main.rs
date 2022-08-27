@@ -30,6 +30,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 scope("/api")
                     .configure(routes::auth::init_routes)
+                    .configure(|cfg| routes::drives::init_routes(cfg, auth_store.clone()))
             )
     });
 

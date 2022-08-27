@@ -18,6 +18,8 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
         );
 }
 
+type AuthResult<T> = JsonResult<T, AuthError>;
+
 #[derive(Deserialize)]
 pub struct AuthRequest {
     username: String,
@@ -35,7 +37,7 @@ pub async fn auth(
     req: HttpRequest,
     body: Json<AuthRequest>,
     auth_store: AuthStoreData,
-) -> JsonResult<TokenDataResponse, AuthError> {
+) -> AuthResult<TokenDataResponse> {
     let mut auth_store = auth_store.lock()
         .map_err(server_error)?;
 
@@ -81,7 +83,7 @@ pub struct CheckResponse {
 pub async fn check_auth(
     body: Json<CheckRequest>,
     auth_store: AuthStoreData,
-) -> JsonResult<CheckResponse, AuthError> {
+) -> AuthResult<CheckResponse> {
     let mut auth_store = auth_store.lock()
         .map_err(server_error)?;
 

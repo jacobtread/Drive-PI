@@ -35,6 +35,19 @@ pub enum AuthStoreError {
     RemoveFailure,
 }
 
+#[derive(Debug, Display, Error)]
+pub enum DrivesError {
+    #[display(fmt = "permission error")]
+    PermissionError,
+    #[display(fmt = "read error")]
+    ReadError,
+    #[display(fmt = "delete error")]
+    DeleteError,
+    #[display(fmt = "drive not found")]
+    DriveNotFound,
+    #[display(fmt = "path not found")]
+    PathNotFound,
+}
 
 /// Helper function to be passed into map_err to
 /// provide a server error like:
@@ -68,6 +81,16 @@ impl From<AuthStoreError> for AuthError {
 }
 
 impl ResponseError for GenericError {}
+
+impl ResponseError for DrivesError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            DrivesError::PermissionError => StatusCode::UNAUTHORIZED,
+            DrivesError::ReadError | DrivesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
+            DrivesError::DriveNotFound | DrivesError::PathNotFound => StatusCode::NOT_FOUND
+        }
+    }
+}
 
 impl ResponseError for AuthError {
     fn status_code(&self) -> StatusCode {
