@@ -42,11 +42,25 @@ pub enum DrivesError {
     #[display(fmt = "read error")]
     ReadError,
     #[display(fmt = "delete error")]
-    DeleteError,
+    UnmountError,
     #[display(fmt = "drive not found")]
     DriveNotFound,
+}
+
+#[derive(Debug, Display, Error)]
+pub enum FilesError {
+    #[display(fmt = "permission error")]
+    PermissionError,
+    #[display(fmt = "read error")]
+    ReadError,
+    #[display(fmt = "delete error")]
+    DeleteError,
     #[display(fmt = "path not found")]
     PathNotFound,
+    #[display(fmt = "file not found")]
+    FileNotFound,
+    #[display(fmt = "path was not a file")]
+    NotFile,
 }
 
 /// Helper function to be passed into map_err to
@@ -86,8 +100,19 @@ impl ResponseError for DrivesError {
     fn status_code(&self) -> StatusCode {
         match self {
             DrivesError::PermissionError => StatusCode::UNAUTHORIZED,
-            DrivesError::ReadError | DrivesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
-            DrivesError::DriveNotFound | DrivesError::PathNotFound => StatusCode::NOT_FOUND
+            DrivesError::ReadError | DrivesError::UnmountError => StatusCode::INTERNAL_SERVER_ERROR,
+            DrivesError::DriveNotFound => StatusCode::NOT_FOUND,
+        }
+    }
+}
+
+impl ResponseError for FilesError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            FilesError::PermissionError => StatusCode::UNAUTHORIZED,
+            FilesError::ReadError | FilesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
+            FilesError::PathNotFound | FilesError::FileNotFound => StatusCode::NOT_FOUND,
+            FilesError::NotFile => StatusCode::BAD_REQUEST
         }
     }
 }

@@ -1,12 +1,10 @@
-use actix_web::{delete, get, HttpRequest, web};
-use actix_web::web::{Json, scope};
+use actix_web::{delete, get, web};
+use actix_web::web::{Json};
 use log::{info, warn};
 use serde::Serialize;
 use uuid::Uuid;
 
 use crate::models::errors::DrivesError;
-use crate::routes::auth_scope;
-use crate::stores::auth::AuthStoreSafe;
 use crate::utils::JsonResult;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {

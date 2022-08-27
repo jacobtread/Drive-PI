@@ -84,7 +84,7 @@ pub async fn check_auth(
     body: Json<CheckRequest>,
     auth_store: AuthStoreData,
 ) -> AuthResult<CheckResponse> {
-    let mut auth_store = auth_store.lock()
+    let auth_store = auth_store.lock()
         .map_err(server_error)?;
 
     let expiry_time =

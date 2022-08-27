@@ -35,6 +35,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         auth_scope(auth_store.clone())
                             .configure(routes::drives::init_routes)
+                            .configure(routes::files::init_routes)
                     )
             )
     });

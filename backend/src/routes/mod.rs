@@ -7,6 +7,7 @@ use crate::stores::auth::AuthStoreSafe;
 
 pub mod auth;
 pub mod drives;
+pub mod files;
 
 /// Creates a scope that is protected by the auth store
 /// authentication middleware
@@ -19,6 +20,6 @@ pub fn auth_scope(auth_store: AuthStoreSafe) -> Scope<
         InitError=(),
     >,
 > {
-    Scope::new(path)
+    Scope::new("")
         .wrap(AuthMiddleware::new(auth_store))
 }

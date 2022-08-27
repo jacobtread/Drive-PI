@@ -32,3 +32,25 @@ Accept: application/json
 Content-Type: application/json
 X-Token: {{auth_token}}
 ###
+
+
+GET http://localhost:8080/api/files/list
+Accept: application/json
+Content-Type: application/json
+X-Token: {{auth_token}}
+
+{
+  "drive": "67e55044-10b1-426f-9247-bb680e5fe0c8",
+  "path": "/"
+}
+###
+GET http://localhost:8080/api/files/view
+Accept: application/json
+Content-Type: application/json
+X-Token: {{auth_token}}
+
+{
+  "drive": "67e55044-10b1-426f-9247-bb680e5fe0c8",
+  "path": "/file.txt"
+}
+###
