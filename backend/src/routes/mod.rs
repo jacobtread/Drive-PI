@@ -10,7 +10,7 @@ pub mod drives;
 
 /// Creates a scope that is protected by the auth store
 /// authentication middleware
-pub fn auth_scope(path: &str, auth_store: AuthStoreSafe) -> Scope<
+pub fn auth_scope(auth_store: AuthStoreSafe) -> Scope<
     impl ServiceFactory<
         ServiceRequest,
         Config=(),

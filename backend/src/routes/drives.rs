@@ -9,13 +9,10 @@ use crate::routes::auth_scope;
 use crate::stores::auth::AuthStoreSafe;
 use crate::utils::JsonResult;
 
-pub fn init_routes(cfg: &mut web::ServiceConfig, auth_store: AuthStoreSafe) {
+pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg
-        .service(
-            auth_scope("/drives", auth_store)
-                .service(list)
-                .service(unmount)
-        );
+        .service(list)
+        .service(unmount);
 }
 
 #[derive(Serialize)]
@@ -41,7 +38,7 @@ pub async fn get_mounted_drives() -> Result<Vec<Drive>, DrivesError> {
     Ok(mock_drives)
 }
 
-#[get("")]
+#[get("/drives")]
 pub async fn list() -> DrivesResult<Vec<Drive>> {
     let drives = get_mounted_drives().await?;
     Ok(Json(drives))
@@ -53,7 +50,7 @@ pub struct UnmountResponse {
     uuid: String,
 }
 
-#[delete("/{drive}")]
+#[delete("/drives/{drive}")]
 pub async fn unmount(uuid: web::Path<String>) -> DrivesResult<UnmountResponse> {
     if let Ok(uuid) = Uuid::parse_str(&uuid) {
         info!("Unmounting drive {}", uuid.to_string());

@@ -5,6 +5,8 @@ use log::info;
 
 use stores::auth::AuthStore;
 
+use crate::routes::auth_scope;
+
 mod routes;
 
 pub mod utils;
@@ -30,7 +32,10 @@ async fn main() -> std::io::Result<()> {
             .service(
                 scope("/api")
                     .configure(routes::auth::init_routes)
-                    .configure(|cfg| routes::drives::init_routes(cfg, auth_store.clone()))
+                    .service(
+                        auth_scope(auth_store.clone())
+                            .configure(routes::drives::init_routes)
+                    )
             )
     });
 
