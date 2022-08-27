@@ -1,7 +1,8 @@
 use std::time::UNIX_EPOCH;
 
-use actix_web::{get, post, web};
+use actix_web::{get, HttpRequest, post, web};
 use actix_web::web::Json;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::models::errors::{AuthError, server_error};
@@ -22,9 +23,14 @@ pub struct TokenDataResponse {
 }
 
 #[post("/auth")]
-pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonResult<TokenDataResponse, AuthError> {
+pub async fn auth(
+    req: HttpRequest,
+    body: Json<AuthRequest>,
+    auth_store: AuthStoreData,
+) -> JsonResult<TokenDataResponse, AuthError> {
     let mut auth_store = auth_store.lock()
         .map_err(server_error)?;
+
 
     let is_credentials = auth_store.is_credentials(&body.username, &body.password);
 
@@ -35,11 +41,18 @@ pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonRes
             .duration_since(UNIX_EPOCH)
             .map_err(server_error)?;
 
+        if let Some(address) = req.peer_addr() {
+            info!("Successful authentication attempt from: {}", address.ip().to_string());
+        }
+
         Ok(Json(TokenDataResponse {
             token: token_data.token,
             expiry_time: time_elapsed.as_millis(),
         }))
     } else {
+        if let Some(address) = req.peer_addr() {
+            warn!("Invalid authentication attempt from: {}", address.ip().to_string());
+        }
         Err(AuthError::InvalidCredentials)
     }
 }
