@@ -77,7 +77,7 @@ impl AuthStore {
     }
 
     /// Retrieves the expiry time for the provided token
-    fn get_token_expiry(
+    pub fn get_token_expiry(
         &self,
         token: &String,
     ) -> AuthResult<Option<SystemTime>> {

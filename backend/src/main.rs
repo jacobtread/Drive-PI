@@ -29,9 +29,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(auth_store_data)
             .service(
                 scope("/api")
-                    .configure(|cfg| {
-                        routes::auth::init_routes(cfg, auth_store.clone())
-                    })
+                    .configure(routes::auth::init_routes)
             )
     });
 

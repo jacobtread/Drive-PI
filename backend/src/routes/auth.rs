@@ -1,7 +1,8 @@
-use std::time::UNIX_EPOCH;
+use std::time::{Duration, UNIX_EPOCH};
 
 use actix_web::{get, HttpRequest, post, web};
-use actix_web::web::Json;
+use actix_web::cookie::time::macros::time;
+use actix_web::web::{Json, scope};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
@@ -22,7 +23,7 @@ pub struct TokenDataResponse {
     expiry_time: u128,
 }
 
-#[post("/auth")]
+#[post("")]
 pub async fn auth(
     req: HttpRequest,
     body: Json<AuthRequest>,
@@ -57,24 +58,47 @@ pub async fn auth(
     }
 }
 
-#[derive(Serialize)]
-pub struct ProtectedResponse {
-    message: String,
+
+#[derive(Deserialize)]
+struct CheckRequest {
+    token: String,
 }
 
-#[get("/test")]
-pub async fn protected() -> JsonResult<ProtectedResponse, AuthError> {
-    Ok(Json(ProtectedResponse {
-        message: "Success Protected Route Hit".to_string()
+#[derive(Serialize)]
+struct CheckResponse {
+    valid: bool,
+    expiry_time: Option<u128>,
+}
+
+#[post("/check")]
+pub async fn check_auth(
+    req: HttpRequest,
+    body: Json<CheckRequest>,
+    auth_store: AuthStoreData,
+) -> JsonResult<CheckResponse, AuthError> {
+    let mut auth_store = auth_store.lock()
+        .map_err(server_error)?;
+
+    let expiry_time =
+        auth_store.get_token_expiry(&body.token)?
+            .map(|token_expiry| {
+                token_expiry
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or(Duration::from_millis(0))
+                    .as_millis()
+            });
+
+    Ok(Json(CheckResponse {
+        valid: expiry_time.is_some(),
+        expiry_time,
     }))
 }
 
-
-pub fn init_routes(cfg: &mut web::ServiceConfig, auth_store: AuthStoreSafe) {
+pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg
-        .service(auth)
         .service(
-            auth_scope(auth_store)
-                .service(protected)
+            scope("/auth")
+                .service(auth)
+                .service(check_auth)
         );
 }

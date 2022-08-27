@@ -5,7 +5,7 @@ This document contains the planned routes for the server API
 - Home (/)
   - This contains the single page web app 
 - Auth **POST** (/api/auth)
-- Check Token **POST** (/api/check_token)
+- Check Token **POST** (/api/auth/check)
 - List Drives **GET** (/api/drives)
 - Mount Drive **POST** (/api/drives)
 - Unmount Drive **DELETE** (/api/drives/{drive})
