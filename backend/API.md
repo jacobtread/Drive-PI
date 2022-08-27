@@ -4,13 +4,18 @@ This document contains the planned routes for the server API
 
 - Home (/)
   - This contains the single page web app 
+
+### Auth
 - Auth **POST** (/api/auth)
 - Check Token **POST** (/api/auth/check)
+### Drives
 - List Drives **GET** (/api/drives)
 - Unmount Drive **DELETE** (/api/drives/{drive})
+### Files
 - List Files **GET** (/api/files/{drive}/{folder_path})
 - View File **GET** (/api/files/{drive}/{folder_path}/${file})
 - Delete File/Folder **DELETE** (/api/files/{drive}/{path})
+### Settings
 - Settings **GET** (/api/settings)
 - Set Settings **PUT** (/api/settings)
 - Reset Settings **DELETE** (/api/settings)
