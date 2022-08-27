@@ -1,14 +1,12 @@
 use std::time::{Duration, UNIX_EPOCH};
 
-use actix_web::{get, HttpRequest, post, web};
-use actix_web::cookie::time::macros::time;
+use actix_web::{HttpRequest, post, web};
 use actix_web::web::{Json, scope};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::models::errors::{AuthError, server_error};
-use crate::routes::auth_scope;
-use crate::stores::auth::{AuthStoreData, AuthStoreSafe};
+use crate::stores::auth::AuthStoreData;
 use crate::utils::JsonResult;
 
 #[derive(Deserialize)]
@@ -60,19 +58,18 @@ pub async fn auth(
 
 
 #[derive(Deserialize)]
-struct CheckRequest {
+pub struct CheckRequest {
     token: String,
 }
 
 #[derive(Serialize)]
-struct CheckResponse {
+pub struct CheckResponse {
     valid: bool,
     expiry_time: Option<u128>,
 }
 
 #[post("/check")]
 pub async fn check_auth(
-    req: HttpRequest,
     body: Json<CheckRequest>,
     auth_store: AuthStoreData,
 ) -> JsonResult<CheckResponse, AuthError> {
