@@ -9,10 +9,25 @@ pub enum GenericError {
     ServerError
 }
 
+/// Helper function to be passed into map_err to
+/// provide a server error like:
+///
+/// ```
+/// .map_err(server_error)?
+/// ```
+///
+/// which is more readable than the alternative
+/// which is:
+///
+/// ```
+/// .map_err(|_|GenericError::ServerError)?
+/// ```
 pub fn server_error<E>(_: E) -> GenericError {
     return GenericError::ServerError;
 }
 
+/// Error type for authentication errors like missing
+/// tokens or invalid credentials. Allows generic errors
 #[derive(Debug, Display, Error)]
 pub enum AuthError {
     #[display(fmt = "invalid credentials")]
@@ -25,6 +40,8 @@ pub enum AuthError {
     GenericError(GenericError),
 }
 
+/// From trait to allow generic errors to be turned into
+/// auth errors.
 impl From<GenericError> for AuthError {
     fn from(value: GenericError) -> Self {
         AuthError::GenericError(value)
