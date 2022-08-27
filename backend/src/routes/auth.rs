@@ -1,39 +1,13 @@
 use std::time::UNIX_EPOCH;
 
-use actix_web::{get, HttpResponse, post, ResponseError, web};
-use actix_web::http::header::ContentType;
-use actix_web::http::StatusCode;
+use actix_web::{get, post, web};
 use actix_web::web::{Json, scope};
-use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
 use crate::middleware::auth::AuthMiddleware;
 
 use crate::stores::auth::{AuthStoreData, AuthStoreSafe};
 use crate::utils::JsonResult;
-
-/// Errors for the authentication endpoint
-#[derive(Debug, Display, Error)]
-pub enum AuthError {
-    #[display(fmt = "invalid credentials")]
-    InvalidCredentials,
-    #[display(fmt = "internal server error")]
-    InternalServerError,
-}
-
-impl ResponseError for AuthError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            AuthError::InvalidCredentials => StatusCode::UNAUTHORIZED,
-            AuthError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code())
-            .insert_header(ContentType::html())
-            .body(self.to_string())
-    }
-}
+use crate::models::errors::{AuthError, server_error};
 
 #[derive(Deserialize)]
 pub struct AuthRequest {
@@ -50,17 +24,17 @@ pub struct TokenDataResponse {
 #[post("/auth")]
 pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonResult<TokenDataResponse, AuthError> {
     let mut auth_store = auth_store.lock()
-        .map_err(|_| AuthError::InternalServerError)?;
+        .map_err(server_error)?;
 
     let is_credentials = auth_store.is_credentials(&body.username, &body.password);
 
     if is_credentials {
         let token_data = auth_store.create_token()
-            .map_err(|_| AuthError::InternalServerError)?;
+            .map_err(server_error)?;
         let time_elapsed = token_data
             .expiry_time
             .duration_since(UNIX_EPOCH)
-            .map_err(|_| AuthError::InternalServerError)?;
+            .map_err(server_error)?;
 
         Ok(Json(TokenDataResponse {
             token: token_data.token,
