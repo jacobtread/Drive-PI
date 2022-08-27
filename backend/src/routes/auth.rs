@@ -3,11 +3,11 @@ use std::time::UNIX_EPOCH;
 use actix_web::{get, post, web};
 use actix_web::web::{Json, scope};
 use serde::{Deserialize, Serialize};
-use crate::middleware::auth::AuthMiddleware;
 
+use crate::middleware::auth::AuthMiddleware;
+use crate::models::errors::{AuthError, server_error};
 use crate::stores::auth::{AuthStoreData, AuthStoreSafe};
 use crate::utils::JsonResult;
-use crate::models::errors::{AuthError, server_error};
 
 #[derive(Deserialize)]
 pub struct AuthRequest {
@@ -29,8 +29,7 @@ pub async fn auth(body: Json<AuthRequest>, auth_store: AuthStoreData) -> JsonRes
     let is_credentials = auth_store.is_credentials(&body.username, &body.password);
 
     if is_credentials {
-        let token_data = auth_store.create_token()
-            .map_err(server_error)?;
+        let token_data = auth_store.create_token()?;
         let time_elapsed = token_data
             .expiry_time
             .duration_since(UNIX_EPOCH)
@@ -62,8 +61,8 @@ pub fn init_routes(cfg: &mut web::ServiceConfig, auth_store: AuthStoreSafe) {
     cfg
         .service(auth)
         .service(
-        scope("/protected")
+            scope("/protected")
                 .wrap(AuthMiddleware::new(auth_store))
                 .service(protected)
-         );
+        );
 }

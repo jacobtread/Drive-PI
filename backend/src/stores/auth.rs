@@ -2,7 +2,10 @@ use std::collections::HashMap;
 use std::ops::Add;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, SystemTime};
+
 use actix_web::web::Data;
+
+use crate::models::errors::AuthStoreError;
 use crate::utils::{create_character_set, create_random_string};
 
 /// Default store credentials
@@ -29,15 +32,8 @@ pub struct AuthStore {
     tokens: RwLock<HashMap<String, SystemTime>>,
 }
 
-// Errors
-pub enum AuthError {
-    ReadFailure,
-    AddFailure,
-    RemoveFailure,
-}
-
 // Type alias for results that can result in AuthError's
-type AuthResult<T> = Result<T, AuthError>;
+type AuthResult<T> = Result<T, AuthStoreError>;
 
 /// Structure for a token to expiry time mapping
 pub struct TokenData {
@@ -85,14 +81,11 @@ impl AuthStore {
         &self,
         token: &String,
     ) -> AuthResult<Option<SystemTime>> {
-        match self.tokens.read() {
-            Ok(tokens) => {
-                match tokens.get(token) {
-                    None => Ok(None),
-                    Some(expiry_time) => Ok(Some(expiry_time.clone()))
-                }
-            }
-            Err(_) => Err(AuthError::ReadFailure)
+        let tokens = self.tokens.read()
+            .map_err(|_|AuthStoreError::ReadFailure)?;
+        match tokens.get(token) {
+            None => Ok(None),
+            Some(expiry_time) => Ok(Some(expiry_time.clone()))
         }
     }
 
@@ -101,13 +94,10 @@ impl AuthStore {
         &mut self,
         token: &String,
     ) -> AuthResult<()> {
-        match self.tokens.write() {
-            Ok(mut tokens) => {
-                tokens.remove(token);
-                Ok(())
-            }
-            Err(_) => Err(AuthError::RemoveFailure)
-        }
+        let mut tokens = self.tokens.write()
+            .map_err(|_| AuthStoreError::RemoveFailure)?;
+        tokens.remove(token);
+        Ok(())
     }
 
     /// Adds the provided token into the tokens map with its
@@ -117,13 +107,10 @@ impl AuthStore {
         token: String,
         expiry_time: SystemTime,
     ) -> AuthResult<()> {
-        match self.tokens.write() {
-            Ok(mut tokens) => {
-                tokens.insert(token, expiry_time);
-                Ok(())
-            }
-            Err(_) => Err(AuthError::AddFailure)
-        }
+        let mut tokens = self.tokens.write()
+            .map_err(|_| AuthStoreError::AddFailure)?;
+        tokens.insert(token, expiry_time);
+        Ok(())
     }
 
     /// Checks whether the token exists in the tokens map and
