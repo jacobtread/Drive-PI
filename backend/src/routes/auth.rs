@@ -9,6 +9,15 @@ use crate::models::errors::{AuthError, server_error};
 use crate::stores::auth::AuthStoreData;
 use crate::utils::JsonResult;
 
+pub fn init_routes(cfg: &mut web::ServiceConfig) {
+    cfg
+        .service(
+            scope("/auth")
+                .service(auth)
+                .service(check_auth)
+        );
+}
+
 #[derive(Deserialize)]
 pub struct AuthRequest {
     username: String,
@@ -89,13 +98,4 @@ pub async fn check_auth(
         valid: expiry_time.is_some(),
         expiry_time,
     }))
-}
-
-pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(
-            scope("/auth")
-                .service(auth)
-                .service(check_auth)
-        );
 }
