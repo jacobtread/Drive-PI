@@ -38,6 +38,7 @@ async fn main() -> std::io::Result<()> {
                             .configure(routes::files::init_routes)
                     )
             )
+            .configure(routes::app::init_routes)
     });
 
     server.bind(("0.0.0.0", 8080))?

@@ -8,6 +8,7 @@ use crate::stores::auth::AuthStoreSafe;
 pub mod auth;
 pub mod drives;
 pub mod files;
+pub mod app;
 
 /// Creates a scope that is protected by the auth store
 /// authentication middleware
