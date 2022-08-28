@@ -7,7 +7,7 @@ use futures::FutureExt;
 use crate::models::errors::{AuthError, server_error};
 use crate::stores::auth::AuthStoreSafe;
 
-const TOKEN_HEADER: &str = "X-Token";
+pub const TOKEN_HEADER: &str = "X-Token";
 
 /// Struct representing a the base middleware for
 /// authentication tokens

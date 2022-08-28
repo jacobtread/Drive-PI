@@ -11,13 +11,10 @@ Content-Type: application/json
 %}
 ###
 
-POST http://localhost:8080/api/auth/check
+GET http://localhost:8080/api/auth
 Accept: application/json
 Content-Type: application/json
-
-{
-  "token": "{{auth_token}}"
-}
+X-Token: {{auth_token}}
 
 ###
 
@@ -53,4 +50,11 @@ X-Token: {{auth_token}}
   "drive": "67e55044-10b1-426f-9247-bb680e5fe0c8",
   "path": "/file.txt"
 }
+###
+
+DELETE http://localhost:8080/api/auth
+Accept: application/json
+Content-Type: application/json
+X-Token: {{auth_token}}
+
 ###

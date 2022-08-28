@@ -7,8 +7,9 @@ This document contains the planned routes for the server API
 
 ### Auth
 
-- Auth **POST** (/api/auth)
-- Check Token **POST** (/api/auth/check)
+- Create Token **POST** (/api/auth)
+- Check Token **GET** (/api/auth)
+- Delete Token **DELETE** (/api/auth)
 
 ### Drives
 

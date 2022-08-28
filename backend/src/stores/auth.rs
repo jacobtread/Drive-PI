@@ -90,7 +90,7 @@ impl AuthStore {
     }
 
     /// Removes the provided token from the valid tokens map
-    fn remove_token(
+    pub fn remove_token(
         &mut self,
         token: &String,
     ) -> AuthResult<()> {
