@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, scope};
 use dotenv::dotenv;
@@ -39,8 +40,10 @@ async fn main() -> std::io::Result<()> {
     info!("Drive-PI starting on http://localhost:{}", port);
 
     let server = HttpServer::new(move || {
+        let cors = Cors::permissive();
         let auth_store_data = Data::new(auth_store.clone());
         App::new()
+            .wrap(cors)
             .app_data(auth_store_data)
             .service(
                 scope("/api")
