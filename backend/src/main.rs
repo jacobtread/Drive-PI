@@ -25,6 +25,8 @@ async fn main() -> std::io::Result<()> {
     let auth_store = AuthStore::create()
         .to_safe();
 
+    info!("Drive-PI starting on http://localhost:8080");
+
     let server = HttpServer::new(move || {
         let auth_store_data = Data::new(auth_store.clone());
         App::new()
