@@ -56,27 +56,35 @@ const Auth: FunctionComponent = () => {
         try {
             const response = await request<AuthResponse>({
                 method: "POST",
-                path: "auth"
+                path: "auth",
+                body: {
+                    username: state.username,
+                    password: state.password
+                }
             });
 
             setToken(response.token)
             navigate("/")
-        } catch (e) {
-            let error: string;
-            if (e instanceof TypeError) {
-                error = "Unable to connect to server"
-            } else if (typeof e === 'string') {
-                error = e;
+        } catch (e: any) {
+            const [statusCode, error] = e as [number, string];
+            let errorText: string
+            if (statusCode === 401) {
+                errorText = "Incorrect credentials"
             } else {
-                error = e?.toString() ?? "Unknown Error Occurred"
+                errorText = error
             }
-            console.error(e);
-            setState({...state, state: State.ERROR, error})
+
+            setState({...state, state: State.ERROR, error: errorText})
         }
     }
 
     return (
         <div className="auth-wrapper">
+            {state.state === State.ERROR && (
+                <p className="auth-error">
+                    {state.error}
+                </p>
+            )}
             <div className="auth">
                 <img className="auth__logo" src="/logo.svg" width="85" height="170" alt="Logo"/>
                 <form className="auth__content" onSubmit={onSubmit}>
@@ -86,6 +94,7 @@ const Auth: FunctionComponent = () => {
                             type="text"
                             name="username"
                             onChange={onValueChange}
+                            value={state.username}
                         />
                     </label>
                     <label className="input">Password
@@ -93,11 +102,14 @@ const Auth: FunctionComponent = () => {
                             className="input__value"
                             type="password"
                             name="password"
+                            onChange={onValueChange}
+                            value={state.password}
                         />
                     </label>
                     <button className="button" type="submit">Login</button>
                 </form>
             </div>
+
         </div>
     )
 }
