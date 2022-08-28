@@ -1,22 +1,20 @@
 import React from 'react';
-import { Link, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Home from "./routes/Home";
 import Auth from "./routes/Auth";
+import { AccessProvider, RequireAccess } from "./components/AccessProvider";
+
 
 function App() {
     return (
-        <div className="App">
-            <header>
-                <nav>
-                    <Link to="/">Home</Link>
-                    <Link to="/auth">Auth</Link>
-                </nav>
-            </header>
+        <AccessProvider>
             <Routes>
-                <Route path={"/"} element={<Home/>}></Route>
                 <Route path={"/auth"} element={<Auth/>}></Route>
+                <Route element={<RequireAccess/>}>
+                    <Route path={"/"} element={<Home/>}></Route>
+                </Route>
             </Routes>
-        </div>
+        </AccessProvider>
     );
 }
 
