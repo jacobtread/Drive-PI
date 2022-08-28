@@ -48,6 +48,7 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
      * clear the token if its invalid or there was an error
      */
     async function checkToken() {
+        if (token == null) return
         try {
             const response = await wrapRequest<CheckResponse>({
                 method: "GET",
@@ -91,8 +92,9 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
             });
         } catch (e) {
             console.error(e)
+        } finally {
+            setToken(null)
         }
-        setToken(null)
     }
 
     const contextValue: AccessContextType = {token, setToken, request: wrapRequest, logout}
