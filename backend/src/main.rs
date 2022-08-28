@@ -1,7 +1,7 @@
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, scope};
 use dotenv::dotenv;
-use log::info;
+use log::{info, warn};
 
 use stores::auth::AuthStore;
 
@@ -14,6 +14,8 @@ pub mod stores;
 pub mod middleware;
 pub mod models;
 
+const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv()
@@ -22,10 +24,19 @@ async fn main() -> std::io::Result<()> {
 
     info!("Loaded environment variables");
 
+    let port_raw = std::env::var(ENV_PORT_KEY)
+        .unwrap_or(String::from("8080"));
+
+    let port = port_raw.parse::<u16>()
+        .unwrap_or_else(|_| {
+            warn!("Port provided as {} is not a valid port defaulting to 8080", port_raw);
+            8080
+        });
+
     let auth_store = AuthStore::create()
         .to_safe();
 
-    info!("Drive-PI starting on http://localhost:8080");
+    info!("Drive-PI starting on http://localhost:{}", port);
 
     let server = HttpServer::new(move || {
         let auth_store_data = Data::new(auth_store.clone());
@@ -43,7 +54,7 @@ async fn main() -> std::io::Result<()> {
             .configure(routes::app::init_routes)
     });
 
-    server.bind(("0.0.0.0", 8080))?
+    server.bind(("0.0.0.0", port))?
         .run()
         .await
 }
