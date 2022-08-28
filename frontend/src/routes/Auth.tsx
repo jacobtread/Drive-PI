@@ -18,7 +18,7 @@ interface AuthState {
 
 interface AuthResponse {
     token: string;
-    expiry_time: string;
+    expiry_time: number;
 }
 
 const Auth: FunctionComponent = () => {

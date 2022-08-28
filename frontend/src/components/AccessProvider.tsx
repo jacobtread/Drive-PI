@@ -10,7 +10,13 @@ export type Token = string | null;
 interface AccessContextType {
     token: Token;
     setToken: (token: Token) => void;
-    request: <V>(requestData: RequestData) => Promise<V>
+    request: <V>(requestData: RequestData) => Promise<V>,
+    logout: () => void;
+}
+
+interface CheckResponse {
+    valid: boolean;
+    expiry_time: number;
 }
 
 // The context which stores our access
@@ -32,6 +38,28 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
     const [token, setToken] = useState<Token>(localStorage.getItem(LOCAL_STORAGE_KEY));
 
     useEffect(saveToken, [token])
+    useEffect(() => {
+        checkToken().then().catch()
+    })
+
+    /**
+     * Checks the initial token loaded from local storage
+     * to see if the token is still valid or not and will
+     * clear the token if its invalid or there was an error
+     */
+    async function checkToken() {
+        try {
+            const response = await wrapRequest<CheckResponse>({
+                method: "GET",
+                path: "auth"
+            });
+            if (!response.valid) {
+                setToken(null)
+            }
+        } catch (e) {
+            setToken(null)
+        }
+    }
 
     /**
      * Saves the token into local storage or removes from
@@ -51,7 +79,23 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
         return request<V>(requestData, token)
     }
 
-    const contextValue: AccessContextType = {token, setToken, request: wrapRequest}
+    /**
+     * Clears the current authentication token and tells
+     * the server to delete the token if it exists
+     */
+    async function logout() {
+        try {
+            await wrapRequest({
+                method: "DELETE",
+                path: "auth"
+            });
+        } catch (e) {
+            console.error(e)
+        }
+        setToken(null)
+    }
+
+    const contextValue: AccessContextType = {token, setToken, request: wrapRequest, logout}
     return <AccessContext.Provider value={contextValue}>{children}</AccessContext.Provider>
 }
 
