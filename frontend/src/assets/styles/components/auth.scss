@@ -1,0 +1,52 @@
+@import "../colors";
+
+.auth-wrapper {
+  height: 100vh;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.auth {
+  text-align: left;
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+
+  background: #ECECEC;
+  border-bottom: 5px solid #dedede;
+  padding: 1rem;
+
+  gap: 1rem;
+  margin-bottom: 5rem;
+
+  width: 100%;
+  max-width: 500px;
+}
+
+.auth__logo {
+  flex: auto;
+}
+.auth__content {
+  display: flex;
+  flex-flow: column;
+  flex: auto;
+  gap: 1rem;
+}
+
+.auth__title {
+  display: block;
+  width: 100%;
+  font-size: 2.5rem;
+  color: darken($primary, 5);
+  opacity: 0.25;
+  font-weight: 900;
+}
+
+.auth__content__subtitle {
+  color: #444;
+  font-size: 1.5rem;
+}
