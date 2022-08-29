@@ -114,4 +114,4 @@ const Auth: FunctionComponent = () => {
     )
 }
 
-export default Auth
+export default Auth;

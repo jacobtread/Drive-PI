@@ -1,16 +1,13 @@
-// Base url for accessing the API (e.g. http://localhost:8080)
 import { createContext, FunctionComponent, PropsWithChildren, useContext, useEffect, useState } from "react";
-import { request, RequestData } from "../api/request";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { request, RequestData, Token } from "$api/request";
 
-const LOCAL_STORAGE_KEY = "drivepi_token"
-
-export type Token = string | null;
+const LOCAL_STORAGE_KEY: string = "drivepi_token";
 
 interface AccessContextType {
     token: Token;
     setToken: (token: Token) => void;
-    request: <V>(requestData: RequestData) => Promise<V>,
+    request: <V>(requestData: RequestData) => Promise<V>;
     logout: () => void;
 }
 
@@ -20,7 +17,7 @@ interface CheckResponse {
 }
 
 // The context which stores our access
-const AccessContext = createContext<AccessContextType>(null!)
+const AccessContext = createContext<AccessContextType>(null!);
 
 export const useAccess = (): AccessContextType => useContext(AccessContext);
 
@@ -37,10 +34,10 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
 
     const [token, setToken] = useState<Token>(localStorage.getItem(LOCAL_STORAGE_KEY));
 
-    useEffect(saveToken, [token])
+    useEffect(saveToken, [token]);
     useEffect(() => {
-        checkToken().then().catch()
-    })
+        checkToken().then().catch();
+    });
 
     /**
      * Checks the initial token loaded from local storage
@@ -48,17 +45,17 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
      * clear the token if its invalid or there was an error
      */
     async function checkToken() {
-        if (token == null) return
+        if (token == null) return;
         try {
             const response = await wrapRequest<CheckResponse>({
                 method: "GET",
                 path: "auth"
             });
             if (!response.valid) {
-                setToken(null)
+                setToken(null);
             }
         } catch (e) {
-            setToken(null)
+            setToken(null);
         }
     }
 
@@ -67,8 +64,8 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
      * local store if the value is null
      */
     function saveToken() {
-        if (token != null) localStorage.setItem(LOCAL_STORAGE_KEY, token)
-        else localStorage.removeItem(LOCAL_STORAGE_KEY)
+        if (token != null) localStorage.setItem(LOCAL_STORAGE_KEY, token);
+        else localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
 
     /**
@@ -77,7 +74,7 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
      * @param requestData The request data.
      */
     function wrapRequest<V>(requestData: RequestData): Promise<V> {
-        return request<V>(requestData, token)
+        return request<V>(requestData, token);
     }
 
     /**
@@ -91,21 +88,21 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
                 path: "auth"
             });
         } catch (e) {
-            console.error(e)
+            console.error(e);
         } finally {
-            setToken(null)
+            setToken(null);
         }
     }
 
-    const contextValue: AccessContextType = {token, setToken, request: wrapRequest, logout}
-    return <AccessContext.Provider value={contextValue}>{children}</AccessContext.Provider>
+    const contextValue: AccessContextType = {token, setToken, request: wrapRequest, logout};
+    return <AccessContext.Provider value={contextValue}>{children}</AccessContext.Provider>;
 }
 
 export const RequireAccess: FunctionComponent = () => {
-    const {token} = useAccess()
-    const location = useLocation()
+    const {token} = useAccess();
+    const location = useLocation();
     if (token == null) {
-        return <Navigate to="/auth" state={{from: location}} replace/>
+        return <Navigate to="/auth" state={{from: location}} replace/>;
     } else {
         return <Outlet/>;
     }
