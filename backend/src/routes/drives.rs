@@ -17,7 +17,6 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 pub struct Drive {
     uuid: String,
     name: String,
-    path: String,
     used: u32,
     capacity: u32,
 }
@@ -29,21 +28,21 @@ pub async fn get_mounted_drives() -> Result<Vec<Drive>, DrivesError> {
         Drive {
             uuid: Uuid::new_v4().to_string(),
             name: "Example Drive".to_string(),
-            path: "/dev/sda1".to_string(),
+            //path: "/dev/sda1".to_string(),
             used: 524288,
             capacity: 26214400
         },
         Drive {
             uuid: Uuid::new_v4().to_string(),
             name: "Test Drive".to_string(),
-            path: "/dev/sda2".to_string(),
+            //path: "/dev/sda2".to_string(),
             used: 324288,
             capacity: 86214400
         },
         Drive {
             uuid: Uuid::new_v4().to_string(),
             name: "USB Drive".to_string(),
-            path: "/dev/sda3".to_string(),
+            // path: "/dev/sda3".to_string(),
             used: 624288,
             capacity: 6214400
         },
