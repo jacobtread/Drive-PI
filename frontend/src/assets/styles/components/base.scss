@@ -54,3 +54,22 @@
 .button:active {
   transform: scale(0.95);
 }
+
+.loader {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 5px solid white;
+  border-radius: 16px;
+  border-left-color: transparent;
+  animation: 1s loader ease infinite;
+}
+
+@keyframes loader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
