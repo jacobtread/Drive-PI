@@ -1,7 +1,7 @@
 use actix_web::{delete, get, web};
 use actix_web::web::{Json};
 use log::{info, warn};
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
 use uuid::Uuid;
 
 use crate::models::errors::DrivesError;
@@ -56,21 +56,25 @@ pub async fn list() -> DrivesResult<Vec<Drive>> {
     Ok(Json(drives))
 }
 
+#[derive(Deserialize)]
+pub struct UnmountRequest {
+    uuid: String,
+}
 
 #[derive(Serialize)]
 pub struct UnmountResponse {
     uuid: String,
 }
 
-#[delete("/drives/{drive}")]
-pub async fn unmount(uuid: web::Path<String>) -> DrivesResult<UnmountResponse> {
-    if let Ok(uuid) = Uuid::parse_str(&uuid) {
+#[delete("/drives")]
+pub async fn unmount(body: Json<UnmountRequest>) -> DrivesResult<UnmountResponse> {
+    if let Ok(uuid) = Uuid::parse_str(&body.uuid) {
         info!("Unmounting drive {}", uuid.to_string());
         Ok(Json(UnmountResponse {
             uuid: uuid.to_string(),
         }))
     } else {
-        warn!("Attempted to unmount invalid drive UUID {}", uuid);
+        warn!("Attempted to unmount invalid drive UUID {}", body.uuid);
         Err(DrivesError::DriveNotFound)
     }
 }

@@ -14,7 +14,7 @@ This document contains the planned routes for the server API
 ### Drives
 
 - List Drives **GET** (/api/drives)
-- Unmount Drive **DELETE** (/api/drives/{drive})
+- Unmount Drive **DELETE** (/api/drives)
 
 ### Files
 
