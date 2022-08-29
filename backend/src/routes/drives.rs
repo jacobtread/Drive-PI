@@ -18,20 +18,35 @@ pub struct Drive {
     uuid: String,
     name: String,
     path: String,
-}
-
-impl Drive {
-    pub fn new(name: &str, path: &str) -> Self {
-        Self { uuid: Uuid::new_v4().to_string(), name: name.to_string(), path: path.to_string() }
-    }
+    used: u32,
+    capacity: u32,
 }
 
 type DrivesResult<T> = JsonResult<T, DrivesError>;
 
 pub async fn get_mounted_drives() -> Result<Vec<Drive>, DrivesError> {
     let mock_drives = vec![
-        Drive::new("Example Drive", "/dev/sda1"),
-        Drive::new("Test Drive", "/dev/sda2"),
+        Drive {
+            uuid: Uuid::new_v4().to_string(),
+            name: "Example Drive".to_string(),
+            path: "/dev/sda1".to_string(),
+            used: 524288,
+            capacity: 26214400
+        },
+        Drive {
+            uuid: Uuid::new_v4().to_string(),
+            name: "Test Drive".to_string(),
+            path: "/dev/sda2".to_string(),
+            used: 324288,
+            capacity: 86214400
+        },
+        Drive {
+            uuid: Uuid::new_v4().to_string(),
+            name: "USB Drive".to_string(),
+            path: "/dev/sda3".to_string(),
+            used: 624288,
+            capacity: 6214400
+        },
     ];
     Ok(mock_drives)
 }

@@ -17,7 +17,7 @@ type FilesResult<T> = JsonResult<T, FilesError>;
 #[derive(Serialize)]
 pub struct DriveFile {
     name: String,
-    size: u64,
+    size: u32,
     last_modified: u128,
 }
 
