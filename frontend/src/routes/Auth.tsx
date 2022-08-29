@@ -80,13 +80,13 @@ const Auth: FunctionComponent = () => {
 
     return (
         <div className="auth-wrapper">
-            {state.state === State.ERROR && (
-                <p className="auth-error">
-                    {state.error}
-                </p>
-            )}
             <div className="auth">
-                <img className="auth__logo" src="/logo.svg" width="85" height="170" alt="Logo"/>
+                <img src="/logo-side.svg" alt="Logo" className="auth__logo"/>
+                {state.state === State.ERROR && (
+                    <p className="auth-error">
+                        {state.error}
+                    </p>
+                )}
                 <form className="auth__content" onSubmit={onSubmit}>
                     <label className="input">Username
                         <input
@@ -95,6 +95,7 @@ const Auth: FunctionComponent = () => {
                             name="username"
                             onChange={onValueChange}
                             value={state.username}
+                            required
                         />
                     </label>
                     <label className="input">Password
@@ -104,6 +105,7 @@ const Auth: FunctionComponent = () => {
                             name="password"
                             onChange={onValueChange}
                             value={state.password}
+                            required
                         />
                     </label>
                     <button className="button" type="submit">Login</button>

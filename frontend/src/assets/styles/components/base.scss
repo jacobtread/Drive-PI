@@ -1,0 +1,56 @@
+@import "../colors";
+
+.input {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #999;
+}
+
+.input__value {
+  margin-top: 0.5rem;
+  display: block;
+  border: none;
+  width: 100%;
+  padding: 0.5rem;
+  font-weight: normal;
+  font-size: 1rem;
+  background: #333;
+  border-bottom: 5px dashed #444;
+  transition: all 0.2s ease;
+  color: #FFF;
+}
+
+.input__value:hover {
+  border-bottom-color: #666;
+
+}
+
+.input__value:focus {
+  outline: transparent;
+  border-bottom-color: $primary;
+}
+
+.button {
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  font-weight: 900;
+  border: none;
+  text-decoration: none;
+  background: $primary;
+  border-bottom: 5px solid $primary-darker;
+  color: white;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.2s ease, border-bottom-color 0.2s ease;
+}
+
+.button:hover {
+  transform: scale(1.02);
+  background: lighten($primary, 10);
+  border-bottom-color: lighten($primary-darker, 10);
+}
+
+.button:active {
+  transform: scale(0.95);
+}

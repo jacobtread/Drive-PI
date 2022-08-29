@@ -13,22 +13,22 @@
 .auth {
   text-align: left;
   display: flex;
-  flex-flow: row;
-  align-items: center;
+  flex-flow: column;
 
-  background: #ECECEC;
-  border-bottom: 5px solid #dedede;
+  background: #333;
+  border-bottom: 5px solid #444;
   padding: 1rem;
 
   gap: 1rem;
   margin-bottom: 5rem;
 
   width: 100%;
-  max-width: 500px;
+  max-width: 400px;
 }
 
 .auth__logo {
   flex: auto;
+  margin: 1rem auto;
 }
 .auth__content {
   display: flex;
@@ -52,5 +52,27 @@
 }
 
 .auth-error {
-  color: $primary;
+  background-color: $primary;
+  padding: 0.5rem;
+  color: #FFFFFF;
+  font-weight: 700;
+  animation: 0.2s ease error-shake;
+}
+
+@keyframes error-shake {
+  0% {
+    transform: translateX(-5px);
+  }
+  25% {
+    transform: translateX(7px);
+  }
+  50% {
+    transform: translateX(-9px);
+  }
+  70% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }

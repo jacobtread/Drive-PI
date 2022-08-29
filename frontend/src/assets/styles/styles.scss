@@ -1,8 +1,15 @@
-@import "routes/auth";
+// Font imports
 @import "@fontsource/raleway/500.css";
 @import "@fontsource/raleway/700.css";
 @import "@fontsource/raleway/900.css";
-@import "colors";
+
+// Route styling
+@import "routes/auth";
+@import "routes/home";
+
+// Component styling
+@import "components/base";
+@import "components/heading";
 
 * {
   margin: 0;
@@ -19,63 +26,11 @@ body {
   sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  background-color: #222;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
   monospace;
-}
-
-.input {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #999;
-}
-
-.input__value {
-  margin-top: 0.5rem;
-  display: block;
-  border: none;
-  width: 100%;
-  padding: 0.5rem;
-  font-weight: normal;
-  font-size: 1rem;
-  background: #D0D0D0;
-  border-bottom: 5px dashed #bebebe;
-  transition: all 0.2s ease;
-}
-
-.input__value:hover {
-  border-bottom-color: #b7a9a9;
-
-}
-
-.input__value:focus {
-  outline: transparent;
-  border-bottom-color: $primary;
-}
-
-.button {
-  padding: 0.5rem;
-  font-size: 1.25rem;
-  text-transform: uppercase;
-  font-weight: 900;
-  border: none;
-  text-decoration: none;
-  background: $primary;
-  border-bottom: 5px solid $primary-darker;
-  color: white;
-  letter-spacing: 2px;
-  cursor: pointer;
-  transition: transform 0.1s ease, background-color 0.2s ease, border-bottom-color 0.2s ease;
-}
-
-.button:hover {
-  transform: scale(1.02);
-  background: lighten($primary, 10);
-  border-bottom-color: lighten($primary-darker, 10);
-}
-
-.button:active {
-  transform: scale(0.95);
 }
