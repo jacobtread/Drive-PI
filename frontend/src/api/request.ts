@@ -1,6 +1,6 @@
 import { Token } from "../components/AccessProvider";
 
-const API_BASE_URL: string = process.env.REACT_APP_URL ?? "/api";
+const API_BASE_URL: string = import.meta.env.VITE_APP_URL;
 
 export type RequestMethod = "GET" | "POST" | "PUT" | "DELETE";
 

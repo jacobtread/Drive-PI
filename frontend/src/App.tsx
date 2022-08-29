@@ -4,7 +4,6 @@ import Home from "./routes/Home";
 import Auth from "./routes/Auth";
 import { AccessProvider, RequireAccess } from "./components/AccessProvider";
 
-
 function App() {
     return (
         <AccessProvider>
