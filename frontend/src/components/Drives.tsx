@@ -98,6 +98,7 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
             <button onClick={() => getDrives()} className="button">Refresh</button>
             {drives.map((drive, index) => {
                 let actionText: string;
+                let details: ReactElement;
                 let actions: ReactElement;
                 if (drive.mount != null) {
                     actionText = "Unmounting"
@@ -111,6 +112,13 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                             </button>
                         </div>
                     )
+                    details = (
+                        <div className="drive__details">
+                            <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
+                            <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span></p>
+                            <p className="drive__mount">Mounted at {drive.mount}</p>
+                        </div>
+                    )
                 } else {
                     actionText = "Mounting"
                     actions = (
@@ -118,6 +126,12 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                             <button className="button" onClick={() => mount(drive)}>
                                 Mount
                             </button>
+                        </div>
+                    )
+                    details = (
+                        <div className="drive__details">
+                            <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
+                            <p className="drive__mount">Not Mounted</p>
                         </div>
                     )
                 }
@@ -136,12 +150,7 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                             </div>
                         )}
                         <img src="/usb.svg" alt="" height={64} className="drive__icon"/>
-                        <div className="drive__details">
-                            <p className="drive__name">{drive.label} <span>{drive.name}</span></p>
-                            <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span>
-                            </p>
-                            <p className="drive__mount">Mounted at {drive.mount}</p>
-                        </div>
+                        {details}
                         <div className="drive__actions-wrapper">
                             {actions}
                         </div>
