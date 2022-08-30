@@ -1,7 +1,6 @@
 import { ChangeEvent, FormEvent, FunctionComponent, useState } from "react";
 import { useAccess } from "../components/AccessProvider";
 import { request } from "../api/request";
-import { useNavigate } from "react-router-dom";
 
 enum State {
     INITIAL,
@@ -22,7 +21,6 @@ interface AuthResponse {
 }
 
 const Auth: FunctionComponent = () => {
-    const navigate = useNavigate()
     const {setToken} = useAccess()
     const [state, setState] = useState<AuthState>({
         state: State.INITIAL,
@@ -64,7 +62,6 @@ const Auth: FunctionComponent = () => {
             });
 
             setToken(response.token)
-            navigate("/")
         } catch (e: any) {
             const [statusCode, error] = e as [number, string];
             let errorText: string

@@ -1,5 +1,4 @@
 import { createContext, FunctionComponent, PropsWithChildren, useContext, useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { request, RequestData, Token } from "$api/request";
 
 const LOCAL_STORAGE_KEY: string = "drivepi_token";
@@ -20,6 +19,7 @@ interface CheckResponse {
 const AccessContext = createContext<AccessContextType>(null!);
 
 export const useAccess = (): AccessContextType => useContext(AccessContext);
+export const useHasAccess = (): boolean => useAccess().token != null
 
 /**
  * Provided for providing the access context to elements
@@ -96,14 +96,4 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
 
     const contextValue: AccessContextType = {token, setToken, request: wrapRequest, logout};
     return <AccessContext.Provider value={contextValue}>{children}</AccessContext.Provider>;
-}
-
-export const RequireAccess: FunctionComponent = () => {
-    const {token} = useAccess();
-    const location = useLocation();
-    if (token == null) {
-        return <Navigate to="/auth" state={{from: location}} replace/>;
-    } else {
-        return <Outlet/>;
-    }
 }
