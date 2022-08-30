@@ -1,12 +1,12 @@
+use std::fs;
+use std::path::Path;
 use std::process::Command;
 
-use actix_web::{delete, get, web};
+use actix_web::{delete, get, post, web};
 use actix_web::web::Json;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use serde_with::{serde_as, VecSkipError};
-
 
 use crate::models::errors::DrivesError;
 use crate::utils::JsonResult;
@@ -14,18 +14,8 @@ use crate::utils::JsonResult;
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg
         .service(list)
-        .service(unmount);
-}
-
-#[derive(Serialize)]
-pub struct Drive {
-    uuid: String,
-    fs_name: String,
-    name: String,
-    path: String,
-    used: String,
-    capacity: String,
-    fs_mode: String,
+        .service(unmount)
+        .service(mount);
 }
 
 type DrivesResult<T> = JsonResult<T, DrivesError>;
@@ -35,21 +25,33 @@ type DrivesResult<T> = JsonResult<T, DrivesError>;
 pub struct BlockDevice {
     name: String,
     #[serde_as(as = "Option<VecSkipError<_>>")]
-    children: Option<Vec<BlockDeviceChild>>,
+    children: Option<Vec<Drive>>,
 }
 
-#[derive(Deserialize)]
-pub struct BlockDeviceChild {
-    name: String,
-    label: String,
+#[derive(Deserialize, Serialize)]
+pub struct Drive {
+    // Filesystem UUID (e.g. 21c89e37-a0aa-48bc-aead-cec8d9a8e8cc)
     uuid: String,
+    // Device name (e.g. sda1)
+    name: String,
+    // Filesystem label (e.g. USB Drive)
+    label: String,
 
-    #[serde(rename = "mountpoint")]
+    // Path to device node (e.g. /dev/sda1)
     path: String,
-    #[serde(rename = "fssize")]
-    size: String,
-    #[serde(rename = "fsused")]
-    used: String,
+
+    // Mounted file system path (e.g. /run/media/DRIVE)
+    // this is None if not mounted
+    #[serde(rename(deserialize="mountpoint"))]
+    mount: Option<String>,
+    // Filesystem capacity. None if file system not mounted
+    #[serde(rename(deserialize="fssize"))]
+    size: Option<String>,
+    // Filesystem used size. None if file system not mounted
+    #[serde(rename(deserialize="fsused"))]
+    used: Option<String>,
+
+    // Filesystem mount mode (e.g. brw-rw----)
     mode: String,
 }
 
@@ -59,11 +61,11 @@ pub struct LSBLKOutput {
     devices: Vec<BlockDevice>,
 }
 
-pub async fn get_drives() -> Result<Vec<Drive>, DrivesError> {
+pub fn get_drives() -> Result<Vec<Drive>, DrivesError> {
     let raw_output = Command::new("lsblk")
         .args([
             "-J" /* Output as JSON */,
-            "-o", "NAME,LABEL,UUID,FSSIZE,FSUSED,MOUNTPOINT,MODE", /* Output contents */
+            "-o", "UUID,NAME,LABEL,PATH,MOUNTPOINT,FSSIZE,FSUSED,MODE", /* Output contents */
         ])
         .output()
         .map_err(|_| DrivesError::SystemError)?
@@ -87,18 +89,9 @@ pub async fn get_drives() -> Result<Vec<Drive>, DrivesError> {
             continue;
         }
 
-
         if let Some(children) = block_device.children {
             for child in children {
-                output.push(Drive {
-                    uuid: child.uuid,
-                    name: child.label,
-                    fs_name: child.name,
-                    capacity: child.size,
-                    used: child.used,
-                    path: child.path,
-                    fs_mode: child.mode,
-                })
+                output.push(child)
             }
         }
     }
@@ -106,37 +99,72 @@ pub async fn get_drives() -> Result<Vec<Drive>, DrivesError> {
     return Ok(output);
 }
 
-pub async fn get_mounted_drives() -> Result<Vec<Drive>, DrivesError> {
-    let mock_drives = get_drives().await?;
-    Ok(mock_drives)
-}
-
 #[get("/drives")]
 pub async fn list() -> DrivesResult<Vec<Drive>> {
-    let drives = get_mounted_drives().await?;
+    let drives = get_drives()?;
     Ok(Json(drives))
 }
 
 #[derive(Deserialize)]
 pub struct UnmountRequest {
-    uuid: String,
-}
-
-#[derive(Serialize)]
-pub struct UnmountResponse {
-    uuid: String,
+    drive_path: String,
 }
 
 #[delete("/drives")]
-pub async fn unmount(body: Json<UnmountRequest>) -> DrivesResult<UnmountResponse> {
-    if let Ok(uuid) = Uuid::parse_str(&body.uuid) {
-        info!("Unmounting drive {}", uuid.to_string());
-        Ok(Json(UnmountResponse {
-            uuid: uuid.to_string(),
-        }))
+pub async fn unmount(body: Json<UnmountRequest>) -> DrivesResult<()> {
+    let output = Command::new("umount")
+        .args([body.drive_path.clone()])
+        .output()
+        .map_err(|_| DrivesError::UnmountError)?;
+
+    let status = output.status;
+
+    if status.success() {
+        Ok(Json(()))
     } else {
-        warn!("Attempted to unmount invalid drive UUID {}", body.uuid);
-        Err(DrivesError::DriveNotFound)
+        let stderr = String::from_utf8(output.stderr)
+            .unwrap_or(String::from("Failed to parse stderr"));
+
+        warn!("Failed to unmount drive {}", stderr);
+        Err(DrivesError::UnmountError)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct MountRequest {
+    drive_path: String,
+    mount_path: String,
+}
+
+
+#[post("/drives")]
+pub async fn mount(body: Json<MountRequest>) -> DrivesResult<()> {
+    let mount_path = format!("/mnt/{}", body.mount_path);
+
+    let path = Path::new(&mount_path);
+    if !path.exists() {
+        fs::create_dir(path)
+            .map_err(|e| {
+                warn!("Unable to create mount dir target {}", e);
+                DrivesError::MountError
+            })?;
+    }
+
+    let output = Command::new("mount")
+        .args([body.drive_path.clone(), mount_path])
+        .output()
+        .map_err(|_| DrivesError::MountError)?;
+
+    let status = output.status;
+
+    if status.success() {
+        Ok(Json(()))
+    } else {
+        let stderr = String::from_utf8(output.stderr)
+            .unwrap_or(String::from("Failed to parse stderr"));
+
+        warn!("Failed to mount drive {}", stderr);
+        Err(DrivesError::MountError)
     }
 }
 

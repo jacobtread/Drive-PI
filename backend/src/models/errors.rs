@@ -45,10 +45,13 @@ pub enum DrivesError {
     ParseError,
     #[display(fmt = "read error")]
     ReadError,
-    #[display(fmt = "delete error")]
+    #[display(fmt = "unmount error")]
     UnmountError,
+    #[display(fmt = "mount error")]
+    MountError,
     #[display(fmt = "drive not found")]
     DriveNotFound,
+
 }
 
 #[derive(Debug, Display, Error)]
@@ -108,6 +111,7 @@ impl ResponseError for DrivesError {
             DrivesError::PermissionError => StatusCode::UNAUTHORIZED,
             DrivesError::ReadError
             | DrivesError::UnmountError
+            | DrivesError::MountError
             | DrivesError::SystemError
             | DrivesError::ParseError
             => StatusCode::INTERNAL_SERVER_ERROR,
