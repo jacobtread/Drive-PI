@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use actix_web::{get, web};
 use actix_web::web::Json;
 use log::info;
@@ -19,11 +21,13 @@ pub struct DriveFile {
     name: String,
     size: u32,
     last_modified: u128,
+    permission: u32,
 }
 
 #[derive(Serialize)]
 pub struct DrivePath {
     name: String,
+    permission: u32,
 }
 
 #[derive(Deserialize)]
@@ -35,7 +39,7 @@ pub struct ListRequest {
 #[derive(Serialize)]
 pub struct ListResponse {
     drive: String,
-    folders: Vec<String>,
+    folders: Vec<DrivePath>,
     files: Vec<DriveFile>,
 }
 
@@ -43,9 +47,18 @@ pub async fn get_files_at(drive: &String, path: &String) -> Result<ListResponse,
     info!("Getting files at {} in drive {}", path, drive);
 
     let mock_folders = vec![
-        String::from("Example Folder"),
-        String::from("Test Folder"),
-        String::from("A Folder"),
+        DrivePath {
+            name: String::from("Example Folder"),
+            permission: 777,
+        },
+        DrivePath {
+            name: String::from("Test Folder"),
+            permission: 644,
+        },
+        DrivePath {
+            name: String::from("A Folder"),
+            permission: 444,
+        },
     ];
 
     let mock_files = vec![
@@ -53,16 +66,19 @@ pub async fn get_files_at(drive: &String, path: &String) -> Result<ListResponse,
             name: String::from("example.txt"),
             size: 1000000,
             last_modified: 1661578999,
+            permission: 777,
         },
         DriveFile {
             name: String::from("test.txt"),
             size: 4000000,
             last_modified: 1661578999,
+            permission: 644,
         },
         DriveFile {
             name: String::from("file.txt"),
             size: 9000000,
             last_modified: 1661578999,
+            permission: 444,
         },
     ];
 
