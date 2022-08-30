@@ -65,6 +65,8 @@ pub enum FilesError {
     FileNotFound,
     #[display(fmt = "path was not a file")]
     NotFile,
+    #[display(fmt = "path was not a directory")]
+    NotDirectory,
 }
 
 /// Helper function to be passed into map_err to
@@ -120,7 +122,7 @@ impl ResponseError for FilesError {
             FilesError::PermissionError => StatusCode::UNAUTHORIZED,
             FilesError::ReadError | FilesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
             FilesError::PathNotFound | FilesError::FileNotFound => StatusCode::NOT_FOUND,
-            FilesError::NotFile => StatusCode::BAD_REQUEST
+            FilesError::NotFile | FilesError::NotDirectory => StatusCode::BAD_REQUEST
         }
     }
 }

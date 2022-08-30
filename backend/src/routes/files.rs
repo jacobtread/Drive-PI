@@ -1,6 +1,8 @@
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+
 use actix_web::{get, web};
 use actix_web::web::Json;
-use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::models::errors::FilesError;
@@ -17,80 +19,84 @@ type FilesResult<T> = JsonResult<T, FilesError>;
 #[derive(Serialize)]
 pub struct DriveFile {
     name: String,
-    size: u32,
-    last_modified: u128,
-    permission: u32,
+    size: u64,
+    permissions: u32,
 }
 
 #[derive(Serialize)]
 pub struct DrivePath {
     name: String,
-    permission: u32,
+    permissions: u32,
 }
 
 #[derive(Deserialize)]
 pub struct ListRequest {
     path: String,
-    drive: String,
+    drive_path: String,
 }
 
 #[derive(Serialize)]
 pub struct ListResponse {
-    drive: String,
+    drive_path: String,
     folders: Vec<DrivePath>,
     files: Vec<DriveFile>,
 }
 
-pub async fn get_files_at(drive: &String, path: &String) -> Result<ListResponse, FilesError> {
-    info!("Getting files at {} in drive {}", path, drive);
+pub async fn get_files_at(
+    drive_path: &String,
+    path: &String,
+) -> Result<ListResponse, FilesError> {
+    let full_path = Path::new(drive_path)
+        .join(path);
+    if !full_path.is_dir() {
+        Err(FilesError::NotDirectory)?
+    }
 
-    let mock_folders = vec![
-        DrivePath {
-            name: String::from("Example Folder"),
-            permission: 777,
-        },
-        DrivePath {
-            name: String::from("Test Folder"),
-            permission: 644,
-        },
-        DrivePath {
-            name: String::from("A Folder"),
-            permission: 444,
-        },
-    ];
+    let mut files: Vec<DriveFile> = Vec::new();
+    let mut folders: Vec<DrivePath> = Vec::new();
 
-    let mock_files = vec![
-        DriveFile {
-            name: String::from("example.txt"),
-            size: 1000000,
-            last_modified: 1661578999,
-            permission: 777,
-        },
-        DriveFile {
-            name: String::from("test.txt"),
-            size: 4000000,
-            last_modified: 1661578999,
-            permission: 644,
-        },
-        DriveFile {
-            name: String::from("file.txt"),
-            size: 9000000,
-            last_modified: 1661578999,
-            permission: 444,
-        },
-    ];
+    let read_dir = full_path.read_dir()
+        .map_err(|_| FilesError::ReadError)?;
 
+    for dir_entry in read_dir {
+        let dir_entry = dir_entry
+            .map_err(|_| FilesError::ReadError)?;
+
+        let meta = dir_entry.metadata()
+            .map_err(|_| FilesError::ReadError)?;
+
+        let name = dir_entry.file_name()
+            .to_str()
+            .ok_or(FilesError::ReadError)?
+            .to_string();
+
+        let permissions = meta.permissions()
+            .mode();
+        if meta.is_dir() {
+            folders.push(DrivePath {
+                name,
+                permissions,
+            });
+        } else {
+            files.push(DriveFile {
+                name,
+                permissions,
+                size: meta.len()
+            });
+        }
+    }
 
     Ok(ListResponse {
-        drive: drive.clone(),
-        files: mock_files,
-        folders: mock_folders,
+        drive_path: drive_path.clone(),
+        files,
+        folders
     })
 }
 
+
 #[get("/files/list")]
 pub async fn list(body: Json<ListRequest>) -> FilesResult<ListResponse> {
-    let response = get_files_at(&body.drive, &body.path).await?;
+    let response = get_files_at(&body.drive_path, &body.path).await?;
     Ok(Json(response))
 }
 
@@ -98,7 +104,7 @@ pub async fn list(body: Json<ListRequest>) -> FilesResult<ListResponse> {
 #[derive(Deserialize)]
 pub struct ViewRequest {
     path: String,
-    drive: String,
+    drive_path: String,
 }
 
 pub async fn read_file(drive: &String, path: &String) -> Result<String, FilesError> {
@@ -107,6 +113,6 @@ pub async fn read_file(drive: &String, path: &String) -> Result<String, FilesErr
 
 #[get("/files/view")]
 pub async fn view(body: Json<ViewRequest>) -> Result<String, FilesError> {
-    let contents = read_file(&body.drive, &body.path).await?;
+    let contents = read_file(&body.drive_path, &body.path).await?;
     Ok(contents)
 }
