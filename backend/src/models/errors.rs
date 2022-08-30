@@ -39,6 +39,10 @@ pub enum AuthStoreError {
 pub enum DrivesError {
     #[display(fmt = "permission error")]
     PermissionError,
+    #[display(fmt = "system error")]
+    SystemError,
+    #[display(fmt = "parse error")]
+    ParseError,
     #[display(fmt = "read error")]
     ReadError,
     #[display(fmt = "delete error")]
@@ -100,7 +104,11 @@ impl ResponseError for DrivesError {
     fn status_code(&self) -> StatusCode {
         match self {
             DrivesError::PermissionError => StatusCode::UNAUTHORIZED,
-            DrivesError::ReadError | DrivesError::UnmountError => StatusCode::INTERNAL_SERVER_ERROR,
+            DrivesError::ReadError
+            | DrivesError::UnmountError
+            | DrivesError::SystemError
+            | DrivesError::ParseError
+            => StatusCode::INTERNAL_SERVER_ERROR,
             DrivesError::DriveNotFound => StatusCode::NOT_FOUND,
         }
     }

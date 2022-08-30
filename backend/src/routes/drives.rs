@@ -1,8 +1,12 @@
+use std::process::Command;
+
 use actix_web::{delete, get, web};
-use actix_web::web::{Json};
+use actix_web::web::Json;
 use log::{info, warn};
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use serde_with::{serde_as, VecSkipError};
+
 
 use crate::models::errors::DrivesError;
 use crate::utils::JsonResult;
@@ -16,38 +20,94 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 #[derive(Serialize)]
 pub struct Drive {
     uuid: String,
+    fs_name: String,
     name: String,
     path: String,
-    used: u32,
-    capacity: u32,
+    used: String,
+    capacity: String,
+    fs_mode: String,
 }
 
 type DrivesResult<T> = JsonResult<T, DrivesError>;
 
+#[serde_as]
+#[derive(Deserialize)]
+pub struct BlockDevice {
+    name: String,
+    #[serde_as(as = "Option<VecSkipError<_>>")]
+    children: Option<Vec<BlockDeviceChild>>,
+}
+
+#[derive(Deserialize)]
+pub struct BlockDeviceChild {
+    name: String,
+    label: String,
+    uuid: String,
+
+    #[serde(rename = "mountpoint")]
+    path: String,
+    #[serde(rename = "fssize")]
+    size: String,
+    #[serde(rename = "fsused")]
+    used: String,
+    mode: String,
+}
+
+#[derive(Deserialize)]
+pub struct LSBLKOutput {
+    #[serde(rename = "blockdevices")]
+    devices: Vec<BlockDevice>,
+}
+
+pub async fn get_drives() -> Result<Vec<Drive>, DrivesError> {
+    let raw_output = Command::new("lsblk")
+        .args([
+            "-J" /* Output as JSON */,
+            "-o", "NAME,LABEL,UUID,FSSIZE,FSUSED,MOUNTPOINT,MODE", /* Output contents */
+        ])
+        .output()
+        .map_err(|_| DrivesError::SystemError)?
+        .stdout;
+
+    let result = serde_json::from_slice::<LSBLKOutput>(&raw_output)
+        .map_err(|e| {
+            warn!("Failed to parse lsblk output: {}", e);
+
+
+            DrivesError::ParseError
+        })?;
+
+    let devices = result.devices;
+
+    let mut output: Vec<Drive> = Vec::new();
+
+    for block_device in devices {
+        // Ignore loop devices
+        if block_device.name.starts_with("loop") {
+            continue;
+        }
+
+
+        if let Some(children) = block_device.children {
+            for child in children {
+                output.push(Drive {
+                    uuid: child.uuid,
+                    name: child.label,
+                    fs_name: child.name,
+                    capacity: child.size,
+                    used: child.used,
+                    path: child.path,
+                    fs_mode: child.mode,
+                })
+            }
+        }
+    }
+
+    return Ok(output);
+}
+
 pub async fn get_mounted_drives() -> Result<Vec<Drive>, DrivesError> {
-    let mock_drives = vec![
-        Drive {
-            uuid: Uuid::new_v4().to_string(),
-            name: "Example Drive".to_string(),
-            path: "/dev/sda1".to_string(),
-            used: 524288,
-            capacity: 26214400
-        },
-        Drive {
-            uuid: Uuid::new_v4().to_string(),
-            name: "Test Drive".to_string(),
-            path: "/dev/sda2".to_string(),
-            used: 324288,
-            capacity: 86214400
-        },
-        Drive {
-            uuid: Uuid::new_v4().to_string(),
-            name: "USB Drive".to_string(),
-            path: "/dev/sda3".to_string(),
-            used: 624288,
-            capacity: 6214400
-        },
-    ];
+    let mock_drives = get_drives().await?;
     Ok(mock_drives)
 }
 
@@ -79,3 +139,4 @@ pub async fn unmount(body: Json<UnmountRequest>) -> DrivesResult<UnmountResponse
         Err(DrivesError::DriveNotFound)
     }
 }
+

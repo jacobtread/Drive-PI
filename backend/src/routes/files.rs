@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use actix_web::{get, web};
 use actix_web::web::Json;
 use log::info;
