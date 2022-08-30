@@ -23,7 +23,6 @@
       "$components/*": ["./src/components/*"],
       "$assets/*": ["./src/assets/*"],
       "$api/*": ["./src/api/*"],
-      "$routes/*": ["./src/routes/*"],
       "$app/*": ["./src/*"]
     }
   },

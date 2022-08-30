@@ -3,12 +3,9 @@
 @import "@fontsource/raleway/700.css";
 @import "@fontsource/raleway/900.css";
 
-// Route styling
-@import "routes/auth";
-@import "routes/home";
-
 // Component styling
 @import "components/base";
+@import "components/auth";
 @import "components/heading";
 @import "components/drives";
 
@@ -42,4 +39,21 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
   monospace;
+}
+
+.home {
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.main {
+  flex: auto;
+
+  display: flex;
+  flex-flow: row;
+
+  height: 100%;
+  overflow: hidden;
 }
