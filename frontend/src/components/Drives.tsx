@@ -1,7 +1,12 @@
 import { FunctionComponent, useEffect, useState } from "react";
 import { useAccess } from "$components/AccessProvider";
 
-interface Drive {
+interface Properties {
+    selected: Drive | null,
+    setSelected: (drive: Drive | null) => void
+}
+
+export interface Drive {
     uuid: string;
     name: string;
     path: string;
@@ -10,7 +15,7 @@ interface Drive {
     unmounting: boolean;
 }
 
-const Drives: FunctionComponent = () => {
+const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
     const {request} = useAccess();
 
     const [drives, setDrives] = useState<Drive[]>([])
@@ -52,7 +57,6 @@ const Drives: FunctionComponent = () => {
     return (
         <div className="drives">
             {drives.map((drive, index) => {
-
                 return (
                     <div key={index} className="drive">
                         {unmounting.indexOf(drive.uuid) != -1 && (
@@ -64,14 +68,22 @@ const Drives: FunctionComponent = () => {
                         <img src="/usb.svg" alt="" height={64} className="drive__icon"/>
                         <div className="drive__details">
                             <p className="drive__name">{drive.name}</p>
-                            <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.capacity}</span></p>
+                            <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.capacity}</span>
+                            </p>
                             <p className="drive__mount">Mounted at {drive.path}</p>
                         </div>
                         <div className="drive__actions-wrapper">
                             <div className="drive__actions">
-                                <button className="button">
-                                    View
-                                </button>
+                                {(selected == null || selected.uuid !== drive.uuid) && (
+                                    <button className="button" onClick={() => setSelected(drive)}>
+                                        View
+                                    </button>
+                                )}
+                                {(selected != null && selected.uuid === drive.uuid) && (
+                                    <button className="button" onClick={() => setSelected(null)}>
+                                        Close
+                                    </button>
+                                )}
                                 <button className="button" onClick={() => unmount(drive)}>
                                     Unmount
                                 </button>

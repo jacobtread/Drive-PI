@@ -1,0 +1,25 @@
+.browser-error {
+  flex: auto;
+
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.browser-error__title {
+  font-weight: 900;
+  color: white;
+}
+
+.browser-error__text {
+  color: #999;
+}
+
+.browser {
+  flex: auto;
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}

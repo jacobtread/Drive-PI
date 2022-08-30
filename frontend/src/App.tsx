@@ -1,8 +1,8 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useState } from "react";
 import Auth from "$components/Auth";
 import { useHasAccess } from "$components/AccessProvider";
 import Heading from "$components/Heading";
-import Drives from "$components/Drives";
+import Drives, { Drive } from "$components/Drives";
 import FileBrowser from "$components/FileBrowser";
 
 /**
@@ -15,12 +15,14 @@ const App: FunctionComponent = () => {
         return <Auth/>
     }
 
+    const [selected, setSelected] = useState<Drive | null>(null)
+
     return (
         <div className="home">
             <Heading/>
             <main className="main">
-                <Drives/>
-                <FileBrowser/>
+                <Drives selected={selected} setSelected={setSelected}/>
+                <FileBrowser drive={selected}/>
             </main>
         </div>
     )
