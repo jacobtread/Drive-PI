@@ -1,7 +1,7 @@
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-use actix_web::{get, web};
+use actix_web::{post, web};
 use actix_web::web::Json;
 use serde::{Deserialize, Serialize};
 
@@ -94,7 +94,7 @@ pub async fn get_files_at(
 }
 
 
-#[get("/files/list")]
+#[post("/files/list")]
 pub async fn list(body: Json<ListRequest>) -> FilesResult<ListResponse> {
     let response = get_files_at(&body.drive_path, &body.path).await?;
     Ok(Json(response))
@@ -111,7 +111,7 @@ pub async fn read_file(drive: &String, path: &String) -> Result<String, FilesErr
     Ok(format!("This is the file at {} in {}", path, drive))
 }
 
-#[get("/files/view")]
+#[post("/files/view")]
 pub async fn view(body: Json<ViewRequest>) -> Result<String, FilesError> {
     let contents = read_file(&body.drive_path, &body.path).await?;
     Ok(contents)

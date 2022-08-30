@@ -23,3 +23,32 @@
   flex-flow: column;
   height: 100%;
 }
+
+.browser__list {
+  flex: auto;
+  overflow-y: auto;
+
+  display: flex;
+  flex-flow: column;
+  gap: 0.5rem;
+  background-color: #111;
+}
+
+.browser__item {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.browser__item__name {
+  color: #999;
+}
+
+.icon {
+  transition: fill 0.15s ease;
+}
+
+.browser__item:hover .icon {
+  fill: $primary;
+}
