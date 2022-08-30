@@ -71,7 +71,8 @@
   font-size: 0.8rem;
 }
 
-.drive__unmounting {
+
+.drive__message {
   position: absolute;
   left: 0;
   top: 0;
@@ -86,6 +87,6 @@
   gap: 1rem;
 }
 
-.drive__unmounting__text {
+.drive__message__text {
   color: #FFF;
 }

@@ -15,6 +15,7 @@ export interface Drive {
     size: string | null; // capacity
     used: string | null; // Used size
     mode: string; // fs mount mode
+    error: string | null;
 }
 
 const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
@@ -59,9 +60,12 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
             })
 
             await getDrives()
-            setUnmounting(values => values.filter(value => value !== drive.uuid));
         } catch (e) {
             console.error(e)
+            drive.error = "Failed to unmount";
+            setDrives(drives => drives);
+        } finally {
+            setUnmounting(values => values.filter(value => value !== drive.uuid));
         }
     }
 
@@ -80,14 +84,18 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                 }
             })
             await getDrives()
-            setUnmounting(values => values.filter(value => value !== drive.uuid));
         } catch (e) {
             console.error(e)
+            drive.error = "Failed to mount";
+            setDrives(drives => drives);
+        } finally {
+            setUnmounting(values => values.filter(value => value !== drive.uuid));
         }
     }
 
     return (
         <div className="drives">
+            <button onClick={() => getDrives()} className="button">Refresh</button>
             {drives.map((drive, index) => {
                 let actionText: string;
                 let actions: ReactElement;
@@ -116,9 +124,14 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
 
                 return (
                     <div key={index} className="drive">
+                        {drive.error && (
+                            <div className="drive__message">
+                                <p className="drive__message__text">{drive.error}</p>
+                            </div>
+                        )}
                         {unmounting.indexOf(drive.uuid) != -1 && (
-                            <div className="drive__unmounting">
-                                <p className="drive__unmounting__text">{actionText} {drive.label} ({drive.path})</p>
+                            <div className="drive__message">
+                                <p className="drive__message__text">{actionText} {drive.label} ({drive.path})</p>
                                 <div className="loader"></div>
                             </div>
                         )}
