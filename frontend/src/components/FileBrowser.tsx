@@ -49,12 +49,14 @@ const FileIcon: FunctionComponent = () => (
 const FileBrowser: FunctionComponent<Properties> = ({drive}) => {
     const {request} = useAccess()
 
+    const [selected, setSelected] = useState(-1);
     const [path, setPath] = useState("");
-    const [history, setHistory] = useState<string[]>([])
     const [driveState, setDriveState] = useState<DriveState>({
         files: [],
         folders: []
     });
+
+    let isRoot = path.length === 0;
 
     async function getFiles(path: string, drive_path: string) {
         try {
@@ -69,6 +71,27 @@ const FileBrowser: FunctionComponent<Properties> = ({drive}) => {
         }
     }
 
+    const moveBack = () => {
+        let slashIndex = path.lastIndexOf('/')
+        if (slashIndex == -1 && path.length > 0) {
+            moveHome()
+        } else {
+            setPath(path.substring(0, slashIndex))
+        }
+    }
+
+    const moveForward = (folder: string) => {
+        let lastPath = path;
+        if (lastPath.length > 0) {
+            setPath(`${lastPath}/${folder}`)
+        } else {
+            setPath(folder)
+        }
+    }
+
+    const moveHome = () => setPath("")
+
+    // Effect for loading the files when the path or drive changes
     useEffect(() => {
         if (drive != null) {
             getFiles(path, drive.path)
@@ -76,6 +99,9 @@ const FileBrowser: FunctionComponent<Properties> = ({drive}) => {
                 .catch(console.error)
         }
     }, [path, drive])
+
+    // Effect for clearing the path when the drive changes
+    useEffect(() => setPath(""), [drive])
 
     if (drive == null) {
         return <div className="browser-error">
@@ -87,45 +113,41 @@ const FileBrowser: FunctionComponent<Properties> = ({drive}) => {
     return (
         <div className="browser">
             <div className="browser__path input">
-                <button>Home</button>
+                <div className="browser__toolbar">
+                    <button onClick={moveHome} disabled={isRoot}>Home</button>
+                    <button onClick={moveBack} disabled={isRoot}>Back</button>
+                </div>
                 <input type="text" readOnly={true} className="browser__path__input input__value"/>
             </div>
-            <div className="browser__toolbar">
-                <button>Back</button>
-                <button>Forward</button>
-                <button>Delete</button>
-                <button>View</button>
-            </div>
-            <div className="browser__list">
+
+            <ul className="browser__list">
 
                 {driveState.folders.map((folder, index) => {
 
-                    function onMovePath() {
-                        console.log(`${path}\\${folder.name}`)
-                        setPath(path => `${path}/${folder.name}`)
-                    }
-
                     return (
-                        <div key={index} className="browser__item browser__item--folder" onClick={onMovePath}>
+                        <li key={index}
+                            className="browser__item browser__item--folder"
+                            onDoubleClick={() => moveForward(folder.name)}
+                        >
                             <FolderIcon/>
                             <p className="browser__item__name">{folder.name}</p>
-                        </div>
+                        </li>
                     )
                 })}
 
                 {driveState.files.map((file, index) => {
 
                     return (
-                        <div key={index} className="browser__item browser__item--file">
+                        <li key={index} className="browser__item browser__item--file ">
                             <FileIcon/>
                             <div>
                                 <p className="browser__item__name">{file.name}</p>
                                 <span>{file.size} bytes</span>
                             </div>
-                        </div>
+                        </li>
                     )
                 })}
-            </div>
+            </ul>
         </div>
     )
 }
