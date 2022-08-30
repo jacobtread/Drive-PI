@@ -26,6 +26,30 @@
   height: 100%;
 }
 
+.browser__path {
+  display: flex;
+  align-items: stretch;
+}
+
+.browser__toolbar {
+  display: flex;
+}
+
+.browser__path__input {
+  margin-top: 0;
+  color: #999;
+}
+
+.browser__toolbar__button {
+  padding: 0.5rem 1rem;
+}
+
+.browser__toolbar__button > .icon {
+  fill: white;
+  width: 32px;
+  height: 32px;
+}
+
 .browser__list {
   flex: auto;
   overflow-y: auto;
@@ -34,6 +58,8 @@
   flex-flow: column;
   gap: 0.5rem;
   background-color: #111;
+
+  padding: 1rem;
 }
 
 .browser__item {
@@ -46,6 +72,14 @@
 
 .browser__item__name {
   color: #999;
+}
+
+.browser__item__size {
+  color: #666;
+}
+
+.browser__item--file {
+  cursor: not-allowed;
 }
 
 .icon {

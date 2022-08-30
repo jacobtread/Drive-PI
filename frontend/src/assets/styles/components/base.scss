@@ -55,6 +55,15 @@
   transform: scale(0.95);
 }
 
+.button:disabled {
+  opacity: 0.5;
+  transform: scale(1);
+  background: $primary;
+  border-bottom-color: $primary-darker;
+  cursor: not-allowed;
+}
+
+
 .loader {
   display: inline-block;
   width: 32px;
