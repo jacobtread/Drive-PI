@@ -1,5 +1,6 @@
 import { FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { useAccess } from "$components/AccessProvider";
+import USB from "$assets/images/usb.svg"
 
 interface Properties {
     selected: Drive | null,
@@ -149,7 +150,7 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                                 <div className="loader"></div>
                             </div>
                         )}
-                        <img src="/icons/usb.svg" alt="" height={64} className="drive__icon"/>
+                        <img src={USB} alt="" height={64} className="drive__icon"/>
                         {details}
                         <div className="drive__actions-wrapper">
                             {actions}

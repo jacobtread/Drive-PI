@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, FunctionComponent, useState } from "react";
 import { useAccess } from "$components/AccessProvider";
 import { request } from "$api/request";
+import LogoSide from "$assets/images/logo-side.svg"
 
 enum State {
     INITIAL,
@@ -78,7 +79,7 @@ const Auth: FunctionComponent = () => {
     return (
         <div className="auth-wrapper">
             <div className="auth">
-                <img src="/public/icons/logo-side.svg" alt="Logo" className="auth__logo"/>
+                <img src={LogoSide} alt="Logo" className="auth__logo"/>
                 {state.state === State.ERROR && (
                     <p className="auth-error">
                         {state.error}
