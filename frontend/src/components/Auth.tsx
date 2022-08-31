@@ -78,7 +78,7 @@ const Auth: FunctionComponent = () => {
     return (
         <div className="auth-wrapper">
             <div className="auth">
-                <img src="/public/logo-side.svg" alt="Logo" className="auth__logo"/>
+                <img src="/public/icons/logo-side.svg" alt="Logo" className="auth__logo"/>
                 {state.state === State.ERROR && (
                     <p className="auth-error">
                         {state.error}

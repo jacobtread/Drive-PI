@@ -149,7 +149,7 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                                 <div className="loader"></div>
                             </div>
                         )}
-                        <img src="/usb.svg" alt="" height={64} className="drive__icon"/>
+                        <img src="/icons/usb.svg" alt="" height={64} className="drive__icon"/>
                         {details}
                         <div className="drive__actions-wrapper">
                             {actions}
