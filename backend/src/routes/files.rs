@@ -4,6 +4,8 @@ use actix_web::{post, web};
 use actix_web::web::Json;
 use serde::{Deserialize, Serialize};
 
+use std::os::unix::fs::PermissionsExt;
+
 use crate::models::errors::FilesError;
 use crate::utils::JsonResult;
 
@@ -19,11 +21,13 @@ type FilesResult<T> = JsonResult<T, FilesError>;
 pub struct DriveFile {
     name: String,
     size: u64,
+    permissions: u32,
 }
 
 #[derive(Serialize)]
 pub struct DrivePath {
     name: String,
+    permissions: u32,
 }
 
 #[derive(Deserialize)]
@@ -67,14 +71,18 @@ pub async fn get_files_at(
             .ok_or(FilesError::ReadError)?
             .to_string();
 
+        let permissions = meta.permissions()
+            .mode();
         if meta.is_dir() {
             folders.push(DrivePath {
                 name,
+                permissions
             });
         } else {
             files.push(DriveFile {
                 name,
-                size: meta.len()
+                size: meta.len(),
+                permissions
             });
         }
     }
