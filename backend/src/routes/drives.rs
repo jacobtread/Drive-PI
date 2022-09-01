@@ -36,10 +36,8 @@ pub struct Drive {
     name: String,
     // Filesystem label (e.g. USB Drive)
     label: String,
-
     // Path to device node (e.g. /dev/sda1)
     path: String,
-
     // Mounted file system path (e.g. /run/media/DRIVE)
     // this is None if not mounted
     #[serde(rename(deserialize="mountpoint"))]
@@ -50,7 +48,6 @@ pub struct Drive {
     // Filesystem used size. None if file system not mounted
     #[serde(rename(deserialize="fsused"))]
     used: Option<String>,
-
     // Filesystem mount mode (e.g. brw-rw----)
     mode: String,
 }

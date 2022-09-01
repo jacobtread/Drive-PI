@@ -29,3 +29,7 @@ pub fn create_random_string(charset: &Vec<char>, length: usize) -> String {
 
     return result;
 }
+
+pub fn setup_hotspot() {
+
+}

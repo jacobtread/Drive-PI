@@ -19,6 +19,7 @@ const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
     dotenv()
         .ok();
     env_logger::init();
@@ -37,7 +38,9 @@ async fn main() -> std::io::Result<()> {
     let auth_store = AuthStore::create()
         .to_safe();
 
-    info!("Drive-PI starting on http://localhost:{}", port);
+    info!("Drive-PI starting on port {} if you are", port);
+    info!("running this on the Raspberry PI access point ");
+    info!("you can access it through http://drivepi.local:{}", port);
 
     let server = HttpServer::new(move || {
         let cors = Cors::permissive();
