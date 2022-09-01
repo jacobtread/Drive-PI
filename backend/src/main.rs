@@ -7,6 +7,7 @@ use log::{info, warn};
 use stores::auth::AuthStore;
 
 use crate::routes::auth_scope;
+use crate::utils::hotspot::start_hotspot;
 
 mod routes;
 
@@ -41,6 +42,9 @@ async fn main() -> std::io::Result<()> {
     info!("Drive-PI starting on port {} if you are", port);
     info!("running this on the Raspberry PI access point ");
     info!("you can access it through http://drivepi.local:{}", port);
+
+    start_hotspot();
+
 
     let server = HttpServer::new(move || {
         let cors = Cors::permissive();
