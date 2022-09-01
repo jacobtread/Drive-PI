@@ -8,7 +8,7 @@ use stores::auth::AuthStore;
 
 use crate::routes::auth_scope;
 use crate::utils::dnsmasq::setup_dnsmasq;
-use crate::utils::hotspot::{Hotspot, start_hotspot};
+use crate::utils::hotspot::{Hotspot};
 
 mod routes;
 

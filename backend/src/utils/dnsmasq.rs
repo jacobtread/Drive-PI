@@ -1,5 +1,5 @@
 use std::fs::{read_to_string, remove_file, write};
-use std::io::{Read, Write, Result};
+use std::io::{Result};
 use std::path::{Path};
 use std::process::exit;
 use log::error;
