@@ -4,11 +4,10 @@ use std::process::Command;
 
 use actix_web::{delete, get, post, web};
 use actix_web::web::Json;
-use log::{info, warn};
-use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, VecSkipError};
-
+use log::warn;
+use serde::{Deserialize};
 use crate::models::errors::DrivesError;
+use crate::utils::drives::{get_drive_list, Drive};
 use crate::utils::JsonResult;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -20,85 +19,10 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 
 type DrivesResult<T> = JsonResult<T, DrivesError>;
 
-#[serde_as]
-#[derive(Deserialize)]
-pub struct BlockDevice {
-    name: String,
-    #[serde_as(as = "Option<VecSkipError<_>>")]
-    children: Option<Vec<Drive>>,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct Drive {
-    // Filesystem UUID (e.g. 21c89e37-a0aa-48bc-aead-cec8d9a8e8cc)
-    uuid: String,
-    // Device name (e.g. sda1)
-    name: String,
-    // Filesystem label (e.g. USB Drive)
-    label: String,
-    // Path to device node (e.g. /dev/sda1)
-    path: String,
-    // Mounted file system path (e.g. /run/media/DRIVE)
-    // this is None if not mounted
-    #[serde(rename(deserialize="mountpoint"))]
-    mount: Option<String>,
-    // Filesystem capacity. None if file system not mounted
-    #[serde(rename(deserialize="fssize"))]
-    size: Option<String>,
-    // Filesystem used size. None if file system not mounted
-    #[serde(rename(deserialize="fsused"))]
-    used: Option<String>,
-    // Filesystem mount mode (e.g. brw-rw----)
-    mode: String,
-}
-
-#[derive(Deserialize)]
-pub struct LSBLKOutput {
-    #[serde(rename = "blockdevices")]
-    devices: Vec<BlockDevice>,
-}
-
-pub fn get_drives() -> Result<Vec<Drive>, DrivesError> {
-    let raw_output = Command::new("lsblk")
-        .args([
-            "-J" /* Output as JSON */,
-            "-o", "UUID,NAME,LABEL,PATH,MOUNTPOINT,FSSIZE,FSUSED,MODE", /* Output contents */
-        ])
-        .output()
-        .map_err(|_| DrivesError::SystemError)?
-        .stdout;
-
-    let result = serde_json::from_slice::<LSBLKOutput>(&raw_output)
-        .map_err(|e| {
-            warn!("Failed to parse lsblk output: {}", e);
-
-
-            DrivesError::ParseError
-        })?;
-
-    let devices = result.devices;
-
-    let mut output: Vec<Drive> = Vec::new();
-
-    for block_device in devices {
-        // Ignore loop devices
-        if block_device.name.starts_with("loop") {
-            continue;
-        }
-
-        if let Some(children) = block_device.children {
-            for child in children {
-                output.push(child)
-            }
-        }
-    }
-
-    return Ok(output);
-}
 
 #[get("/drives")]
 pub async fn list() -> DrivesResult<Vec<Drive>> {
-    let drives = get_drives()?;
+    let drives = get_drive_list()?;
     Ok(Json(drives))
 }
 

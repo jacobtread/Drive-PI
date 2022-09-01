@@ -29,24 +29,27 @@ pub fn start_hotspot() {
     let output = Command::new("nmcli")
         .args([
             "d", "wifi", "hotspot",
-            "ifname", interface,
-            "ssid", ssid.clone(),
-            "password", password.clone()
+            "ifname", interface.as_ref(),
+            "ssid", ssid.clone().as_ref(),
+            "password", password.clone().as_ref()
         ])
         .output()
-        .unwrap_or_else(|_| {
+        .unwrap_or_else(|err| {
             error!("Failed to start hotspot: {}", err);
             exit(2);
         });
 
     // Parse the stdout as a string
-    let output = String::from_utf8_lossy(&output.stdout)
-        .as_ref();
-
+    let output = String::from_utf8(output.stdout)
+        .unwrap_or_else(|err| {
+            error!("Failed to parse nmcli output: {}", err);
+            exit(3);
+        });
+    
     // Fail if the message doesn't say success
     if !output.contains("successfully activated") {
         error!("Failed to start hotspot: {}", output);
-        exit(3);
+        exit(4);
     }
 
     info!("Created hotspot named {} with password {}", ssid, password);

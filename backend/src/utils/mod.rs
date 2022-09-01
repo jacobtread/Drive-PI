@@ -1,4 +1,5 @@
 pub mod hotspot;
+pub mod drives;
 
 use actix_web::web::Json;
 use rand::{Rng, thread_rng};
