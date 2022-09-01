@@ -1,6 +1,7 @@
 pub mod hotspot;
 pub mod drives;
 pub mod samba;
+pub mod dnsmasq;
 
 use actix_web::web::Json;
 use rand::{Rng, thread_rng};

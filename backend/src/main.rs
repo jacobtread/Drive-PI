@@ -7,6 +7,7 @@ use log::{info, warn};
 use stores::auth::AuthStore;
 
 use crate::routes::auth_scope;
+use crate::utils::dnsmasq::setup_dnsmasq;
 use crate::utils::hotspot::start_hotspot;
 
 mod routes;
@@ -20,7 +21,6 @@ const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     dotenv()
         .ok();
     env_logger::init();
@@ -41,10 +41,14 @@ async fn main() -> std::io::Result<()> {
 
     info!("Drive-PI starting on port {} if you are", port);
     info!("running this on the Raspberry PI access point ");
-    info!("you can access it through http://drivepi.local:{}", port);
+    if port == 80 {
+        info!("you can access it through http://drivepi.local");
+    } else {
+        info!("you can access it through http://drivepi.local:{}", port);
+    }
 
     start_hotspot();
-
+    setup_dnsmasq();
 
     let server = HttpServer::new(move || {
         let cors = Cors::permissive();
