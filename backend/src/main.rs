@@ -36,8 +36,7 @@ async fn main() -> std::io::Result<()> {
             8080
         });
 
-    let auth_store = AuthStore::create()
-        .to_safe();
+    let auth_store = AuthStore::create();
 
     info!("Drive-PI starting on port {} if you are", port);
     info!("running this on the Raspberry PI access point ");
@@ -47,7 +46,9 @@ async fn main() -> std::io::Result<()> {
         info!("you can access it through http://drivepi.local:{}", port);
     }
 
+    // Start hotspot
     start_hotspot();
+    // Configure domain (drivepi.local)
     setup_dnsmasq();
 
     let server = HttpServer::new(move || {

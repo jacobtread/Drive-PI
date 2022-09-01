@@ -47,23 +47,20 @@ pub type AuthStoreData = Data<AuthStoreSafe>;
 impl AuthStore {
     /// Creates a new instance of the auth store using the
     /// provided username and password as the credentials.
-    pub fn create() -> Self {
+    pub fn create() -> AuthStoreSafe {
         let username = std::env::var(ENV_USERNAME_KEY)
             .unwrap_or(String::from(DEFAULT_USERNAME));
 
         let password = std::env::var(ENV_PASSWORD_KEY)
             .unwrap_or(String::from(DEFAULT_PASSWORD));
 
-        Self {
+        Arc::new(Mutex::new(Self {
             username,
             password,
             tokens: RwLock::new(HashMap::new()),
-        }
+        }))
     }
 
-    pub fn to_safe(self) -> Arc<Mutex<Self>> {
-        return Arc::new(Mutex::new(self));
-    }
 
     /// Checks whether the provided username and password
     /// match the credentials stored in the store
