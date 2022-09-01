@@ -45,7 +45,7 @@ pub fn start_hotspot() {
             error!("Failed to parse nmcli output: {}", err);
             exit(3);
         });
-    
+
     // Fail if the message doesn't say success
     if !output.contains("successfully activated") {
         error!("Failed to start hotspot: {}", output);
