@@ -7,16 +7,21 @@ const DEFAULT_HOTSPOT_INTERFACE: &str = "wlan0";
 const DEFAULT_HOTSPOT_SSID: &str = "Drive-PI";
 const DEFAULT_HOTSPOT_PASSWORD: &str = "Drive-PI";
 
+// Environment variable keys
+const ENV_HOTSPOT_INTERFACE: &str = "DRIVEPI_HOTSPOT_INTERFACE";
+const ENV_HOTSPOT_SSID: &str = "DRIVEPI_HOTSPOT_SSID";
+const ENV_HOTSPOT_PASSWORD: &str = "DRIVEPI_HOTSPOT_PASSWORD";
+
 /// Starts the hotspot using the system command
 pub fn start_hotspot() {
 
     // Settings loaded through environment variables with defaults
-    let interface = env::var("DRIVEPI_HOTSPOT_INTERFACE")
+    let interface = env::var(ENV_HOTSPOT_INTERFACE)
         .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_INTERFACE));
-    let ssid = env::var("DRIVEPI_HOTSPOT_SSID")
-        .unwrap_or(String::from(DEFAULT_HOTSPOT_SSID));
-    let password = env::var("DRIVEPI_HOTSPOT_PASSWORD")
-        .unwrap_or(String::from(DEFAULT_HOTSPOT_PASSWORD));
+    let ssid = env::var(ENV_HOTSPOT_SSID)
+        .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_SSID));
+    let password = env::var(ENV_HOTSPOT_PASSWORD)
+        .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_PASSWORD));
 
     // Ensure the password is long enough
     if password.len() < 8 {
