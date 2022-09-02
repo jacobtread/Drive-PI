@@ -69,13 +69,12 @@ impl<S, B> Service<ServiceRequest> for AuthMiddlewareInner<S>
                 .ok_or(AuthError::MissingToken)?;
 
             let token = token_header.to_str()
-                .map_err(server_error)?
-                .to_string();
+                .map_err(server_error)?;
 
             let mut auth_store = auth_store.lock()
                 .map_err(server_error)?;
 
-            let is_valid = auth_store.check_token(&token)
+            let is_valid = auth_store.check_token(token)
                 .map_err(server_error)?;
             if is_valid {
                 service.call(req).await

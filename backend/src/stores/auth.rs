@@ -76,7 +76,7 @@ impl AuthStore {
     /// Retrieves the expiry time for the provided token
     pub fn get_token_expiry(
         &self,
-        token: &String,
+        token: &str,
     ) -> AuthResult<Option<SystemTime>> {
         let tokens = self.tokens.read()
             .map_err(|_|AuthStoreError::ReadFailure)?;
@@ -89,7 +89,7 @@ impl AuthStore {
     /// Removes the provided token from the valid tokens map
     pub fn remove_token(
         &mut self,
-        token: &String,
+        token: &str,
     ) -> AuthResult<()> {
         let mut tokens = self.tokens.write()
             .map_err(|_| AuthStoreError::RemoveFailure)?;
@@ -115,7 +115,7 @@ impl AuthStore {
     /// whether the token is valid
     pub fn check_token(
         &mut self,
-        token: &String,
+        token: &str,
     ) -> AuthResult<bool> {
         let expiry_time = self.get_token_expiry(token)?;
         match expiry_time {
