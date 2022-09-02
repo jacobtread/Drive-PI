@@ -1,7 +1,7 @@
 use std::env;
 use std::process::{Command, exit};
 use log::{error, info};
-use derive_more::{Display, Error};
+use crate::models::errors::HotspotError;
 
 // Default setting constants
 const DEFAULT_HOTSPOT_INTERFACE: &str = "wlan0";
