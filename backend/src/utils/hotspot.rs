@@ -80,13 +80,3 @@ impl Drop for Hotspot {
         self.stop()
     }
 }
-
-#[derive(Debug, Display, Error)]
-pub enum HotspotError {
-    #[display(fmt = "failed to activate hotspot")]
-    NotActivated,
-    #[display(fmt = "failed to execute hotspot command")]
-    CommandError,
-    #[display(fmt = "failed to parse output from hotspot command")]
-    CommandOutputError,
-}
