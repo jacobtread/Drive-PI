@@ -4,6 +4,8 @@ use std::path::{Path};
 use std::process::exit;
 use log::error;
 
+const HOSTS_FILE_PATH: &str = "/etc/hosts";
+const DNSMASQ_CONFIG_PATH: &str = "/etc/NetworkManager/dnsmasq-shared.d/hosts.conf";
 const CONFIG_CONTENTS: &str = "address=/.local/10.42.0.1";
 const HOSTS_ENTRY: &str = "127.0.0.1 drivepi.local";
 
@@ -25,7 +27,7 @@ pub fn setup_dnsmasq() {
 /// Writes the config file at /etc/NetworkManager/dnsmasq-shared.d/hosts.conf
 /// with CONFIG_CONTENTS which indicates which domains to address to this machine
 fn write_config_file() -> Result<()> {
-    let path = Path::new("/etc/NetworkManager/dnsmasq-shared.d/hosts.conf");
+    let path = Path::new(DNSMASQ_CONFIG_PATH);
     if path.exists() {
         remove_file(path)?;
     }
@@ -36,7 +38,7 @@ fn write_config_file() -> Result<()> {
 /// Writes an entry to the /etc/hosts file which points localhost to
 /// drivepi.local which will be used by dnsmasq
 fn write_hosts_entry() -> Result<()> {
-    let path = Path::new("/etc/hosts");
+    let path = Path::new(HOSTS_FILE_PATH);
     let mut contents = read_to_string(path)?;
     if !contents.contains(HOSTS_ENTRY) {
         contents.push('\n');

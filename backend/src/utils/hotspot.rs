@@ -69,7 +69,7 @@ impl Hotspot {
     fn stop(&self) {
         // Stop the hotspot using the nmcli (network-manager cli) tool
         Command::new("nmcli")
-            .args(["con", "down", HOTSPOT_CONN_NAME, ])
+            .args(["con", "down", HOTSPOT_CONN_NAME])
             .output()
             .expect("Failed to stop hotspot");
     }

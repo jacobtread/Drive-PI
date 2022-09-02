@@ -5,7 +5,11 @@ pub mod dnsmasq;
 pub mod files;
 
 use actix_web::web::Json;
+use log::warn;
 use rand::{Rng, thread_rng};
+
+const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
+const DEFAULT_PORT: u16 = 80;
 
 pub type JsonResult<R, E> = Result<Json<R>, E>;
 pub type JsonEmpty<E> = Result<Json<()>, E>;
@@ -37,7 +41,19 @@ pub fn create_random_string(charset: &Vec<char>, length: usize) -> String {
     return result;
 }
 
-pub fn setup_hotspot() {}
+pub fn get_env_port() -> u16 {
+    let port_env = std::env::var(ENV_PORT_KEY);
+    if let Ok(port_raw) = port_env {
+        if let Ok(port) = port_raw.parse::<u16>() {
+            port
+        } else {
+            warn!("Port provided as {} is not a valid port defaulting to {}", port_raw, DEFAULT_PORT);
+            DEFAULT_PORT
+        }
+    } else {
+        DEFAULT_PORT
+    }
+}
 
 pub fn ok_json<V, E>(value: V) -> Result<Json<V>, E> {
     return Ok(Json(value));

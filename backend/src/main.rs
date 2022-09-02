@@ -2,12 +2,13 @@ use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, scope};
 use dotenv::dotenv;
-use log::{error, info, warn};
+use log::{error, info};
 
 use stores::auth::AuthStore;
 
 use crate::routes::auth_scope;
 use crate::utils::dnsmasq::setup_dnsmasq;
+use crate::utils::get_env_port;
 use crate::utils::hotspot::{Hotspot};
 
 mod routes;
@@ -17,7 +18,6 @@ pub mod stores;
 pub mod middleware;
 pub mod models;
 
-const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -27,15 +27,7 @@ async fn main() -> std::io::Result<()> {
 
     info!("Loaded environment variables");
 
-    let port_raw = std::env::var(ENV_PORT_KEY)
-        .unwrap_or(String::from("8080"));
-
-    let port = port_raw.parse::<u16>()
-        .unwrap_or_else(|_| {
-            warn!("Port provided as {} is not a valid port defaulting to 8080", port_raw);
-            8080
-        });
-
+    let port = get_env_port();
     let auth_store = AuthStore::create();
 
     info!("Drive-PI starting on port {} if you are", port);
