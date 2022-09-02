@@ -39,37 +39,18 @@ pub enum AuthStoreError {
 
 #[derive(Debug, Display, Error)]
 pub enum DrivesError {
-    #[display(fmt = "permission error")]
-    PermissionError,
     #[display(fmt = "system error")]
     SystemError,
     #[display(fmt = "parse error")]
     ParseError,
-    #[display(fmt = "read error")]
-    ReadError,
     #[display(fmt = "unmount error")]
     UnmountError,
     #[display(fmt = "mount error")]
     MountError,
-    #[display(fmt = "drive not found")]
-    DriveNotFound,
-
 }
 
 #[derive(Debug, Display, Error)]
 pub enum FilesError {
-    #[display(fmt = "permission error")]
-    PermissionError,
-    #[display(fmt = "read error")]
-    ReadError,
-    #[display(fmt = "delete error")]
-    DeleteError,
-    #[display(fmt = "path not found")]
-    PathNotFound,
-    #[display(fmt = "file not found")]
-    FileNotFound,
-    #[display(fmt = "path was not a file")]
-    NotFile,
     #[display(fmt = "path was not a directory")]
     NotDirectory,
     #[display(fmt = "io error")]
@@ -117,14 +98,11 @@ impl ResponseError for GenericError {}
 impl ResponseError for DrivesError {
     fn status_code(&self) -> StatusCode {
         match self {
-            DrivesError::PermissionError => StatusCode::UNAUTHORIZED,
-            DrivesError::ReadError
-            | DrivesError::UnmountError
+            DrivesError::UnmountError
             | DrivesError::MountError
             | DrivesError::SystemError
             | DrivesError::ParseError
             => StatusCode::INTERNAL_SERVER_ERROR,
-            DrivesError::DriveNotFound => StatusCode::NOT_FOUND,
         }
     }
 }
@@ -132,10 +110,8 @@ impl ResponseError for DrivesError {
 impl ResponseError for FilesError {
     fn status_code(&self) -> StatusCode {
         match self {
-            FilesError::PermissionError => StatusCode::UNAUTHORIZED,
-            FilesError::ReadError | FilesError::IOError | FilesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
-            FilesError::PathNotFound | FilesError::FileNotFound => StatusCode::NOT_FOUND,
-            FilesError::NotFile | FilesError::NotDirectory => StatusCode::BAD_REQUEST
+            FilesError::IOError => StatusCode::INTERNAL_SERVER_ERROR,
+            FilesError::NotDirectory => StatusCode::BAD_REQUEST
         }
     }
 }
