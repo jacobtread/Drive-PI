@@ -42,3 +42,7 @@ pub fn setup_hotspot() {}
 pub fn ok_json<V, E>(value: V) -> Result<Json<V>, E> {
     return Ok(Json(value));
 }
+
+pub fn ok_json_empty<E>() -> Result<Json<()>, E> {
+    return Ok(Json(()));
+}

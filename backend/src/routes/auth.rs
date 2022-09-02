@@ -1,48 +1,32 @@
 use std::time::{Duration, UNIX_EPOCH};
 
 use actix_web::{delete, get, HttpRequest, post, web};
-use actix_web::web::{Json, scope};
+use actix_web::web::Json;
 use log::{info, warn};
-use serde::{Deserialize, Serialize};
 
 use crate::middleware::auth::TOKEN_HEADER;
-use crate::models::errors::{AuthError, server_error};
+use crate::models::auth::{AuthRequest, CheckResponse, TokenDataResponse};
+use crate::models::errors::AuthError;
 use crate::stores::auth::AuthStoreData;
-use crate::utils::JsonResult;
+use crate::utils::{JsonResult, ok_json, ok_json_empty};
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg
-        .service(
-            scope("/auth")
-                .service(auth)
-                .service(check_auth)
-                .service(delete_token)
-        );
+        .service(auth)
+        .service(check_auth)
+        .service(delete_token);
 }
 
 type AuthResult<T> = JsonResult<T, AuthError>;
+type AuthResultEmpty = AuthResult<()>;
 
-#[derive(Deserialize)]
-pub struct AuthRequest {
-    username: String,
-    password: String,
-}
-
-#[derive(Serialize)]
-pub struct TokenDataResponse {
-    token: String,
-    expiry_time: u128,
-}
-
-#[post("")]
+#[post("/auth")]
 pub async fn auth(
     req: HttpRequest,
     body: Json<AuthRequest>,
     auth_store: AuthStoreData,
 ) -> AuthResult<TokenDataResponse> {
-    let mut auth_store = auth_store.lock()
-        .map_err(server_error)?;
-
+    let mut auth_store = auth_store.lock()?;
 
     let is_credentials = auth_store.is_credentials(&body.username, &body.password);
 
@@ -50,17 +34,16 @@ pub async fn auth(
         let token_data = auth_store.create_token()?;
         let time_elapsed = token_data
             .expiry_time
-            .duration_since(UNIX_EPOCH)
-            .map_err(server_error)?;
+            .duration_since(UNIX_EPOCH)?;
 
         if let Some(address) = req.peer_addr() {
             info!("Successful authentication attempt from: {}", address.ip().to_string());
         }
 
-        Ok(Json(TokenDataResponse {
+        ok_json(TokenDataResponse {
             token: token_data.token,
             expiry_time: time_elapsed.as_millis(),
-        }))
+        })
     } else {
         if let Some(address) = req.peer_addr() {
             warn!("Invalid authentication attempt from: {}", address.ip().to_string());
@@ -69,14 +52,7 @@ pub async fn auth(
     }
 }
 
-
-#[derive(Serialize)]
-pub struct CheckResponse {
-    valid: bool,
-    expiry_time: Option<u128>,
-}
-
-#[get("")]
+#[get("/auth")]
 pub async fn check_auth(
     req: HttpRequest,
     auth_store: AuthStoreData,
@@ -84,15 +60,10 @@ pub async fn check_auth(
     let token_header = req.headers().get(TOKEN_HEADER)
         .ok_or(AuthError::MissingToken)?;
 
-    let token = token_header.to_str()
-        .map_err(server_error)?
-        .to_string();
-
-    let auth_store = auth_store.lock()
-        .map_err(server_error)?;
-
+    let token = token_header.to_str()?;
+    let auth_store = auth_store.lock()?;
     let expiry_time =
-        auth_store.get_token_expiry(&token)?
+        auth_store.get_token_expiry(token)?
             .map(|token_expiry| {
                 token_expiry
                     .duration_since(UNIX_EPOCH)
@@ -100,31 +71,24 @@ pub async fn check_auth(
                     .as_millis()
             });
 
-    Ok(Json(CheckResponse {
+    ok_json(CheckResponse {
         valid: expiry_time.is_some(),
         expiry_time,
-    }))
+    })
 }
 
-#[delete("")]
+#[delete("/auth")]
 pub async fn delete_token(
     req: HttpRequest,
-    auth_store: AuthStoreData
-) -> AuthResult<()> {
+    auth_store: AuthStoreData,
+) -> AuthResultEmpty {
     let token_header = req.headers().get(TOKEN_HEADER)
         .ok_or(AuthError::MissingToken)?;
-
-    let token = token_header.to_str()
-        .map_err(server_error)?
-        .to_string();
-
-    let mut auth_store = auth_store.lock()
-        .map_err(server_error)?;
-
-    auth_store.remove_token(&token)
-        .map_err(server_error)?;
+    let token = token_header.to_str()?;
+    let mut auth_store = auth_store.lock()?;
+    auth_store.remove_token(token)?;
     if let Some(address) = req.peer_addr() {
         info!("Deleted authentication token {} for {}", token, address.ip().to_string());
     }
-    Ok(Json(()))
+    ok_json_empty()
 }

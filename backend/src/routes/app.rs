@@ -9,10 +9,8 @@ use rust_embed::{EmbeddedFile, RustEmbed};
 struct PublicDir;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(public);
+    cfg.service(public);
 }
-
 
 async fn serve_file(path: &str, file: EmbeddedFile) -> HttpResponse<BoxBody> {
     HttpResponse::Ok()

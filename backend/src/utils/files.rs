@@ -1,29 +1,13 @@
 use std::path::PathBuf;
-use crate::models::errors::FilesError;
-use serde::Serialize;
 use std::os::unix::fs::PermissionsExt;
+
+use crate::models::errors::FilesError;
+use crate::models::files::{DriveFile, DriveFolder, DriveList};
 
 type FilesResult<T> = Result<T, FilesError>;
 
-#[derive(Serialize)]
-pub struct DriveFile {
-    name: String,
-    size: u64,
-    permissions: u32,
-}
-
-#[derive(Serialize)]
-pub struct DriveFolder {
-    name: String,
-    permissions: u32,
-}
-
-#[derive(Serialize)]
-pub struct DriveList {
-    folders: Vec<DriveFolder>,
-    files: Vec<DriveFile>,
-}
-
+/// Retrieves a list of files and folders in the provided mount
+/// path.
 pub fn get_files_at(
     drive_path: &String,
     path: &String,

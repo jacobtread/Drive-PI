@@ -1,9 +1,9 @@
 use actix_web::{post, web};
 use actix_web::web::Json;
-use serde::Deserialize;
 
 use crate::models::errors::FilesError;
-use crate::utils::files::{DriveList, get_files_at};
+use crate::models::files::{DriveList, ListRequest};
+use crate::utils::files::get_files_at;
 use crate::utils::JsonResult;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -12,12 +12,6 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 }
 
 type FilesResult<T> = JsonResult<T, FilesError>;
-
-#[derive(Deserialize)]
-pub struct ListRequest {
-    path: String,
-    drive_path: String,
-}
 
 #[post("/files/list")]
 pub async fn list(body: Json<ListRequest>) -> FilesResult<DriveList> {

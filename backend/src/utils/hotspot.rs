@@ -1,6 +1,7 @@
 use std::env;
 use std::process::{Command, exit};
 use log::{error, info};
+use derive_more::{Display, Error};
 
 // Default setting constants
 const DEFAULT_HOTSPOT_INTERFACE: &str = "wlan0";
@@ -17,7 +18,7 @@ const HOTSPOT_CONN_NAME: &str = "Hotspot";
 pub struct Hotspot;
 
 impl Hotspot {
-    pub fn start() -> Self {
+    pub fn start() -> Result<Self, HotspotError> {
         // Settings loaded through environment variables with defaults
         let interface = env::var(ENV_HOTSPOT_INTERFACE)
             .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_INTERFACE));
@@ -43,26 +44,26 @@ impl Hotspot {
                 "password", password.clone().as_ref()
             ])
             .output()
-            .unwrap_or_else(|err| {
+            .map_err(|err| {
                 error!("Failed to start hotspot: {}", err);
-                exit(2);
-            });
+                HotspotError::CommandError
+            })?;
 
         // Parse the stdout as a string
         let output = String::from_utf8(output.stdout)
-            .unwrap_or_else(|err| {
+            .map_err(|err| {
                 error!("Failed to parse nmcli output: {}", err);
-                exit(3);
-            });
+                HotspotError::CommandOutputError
+            })?;
 
         // Fail if the message doesn't say success
         if !output.contains("successfully activated") {
             error!("Failed to start hotspot: {}", output);
-            exit(4);
+            return Err(HotspotError::NotActivated);
         }
 
         info!("Created hotspot named {} with password {}", ssid, password);
-        return Self {};
+        return Ok(Self {});
     }
 
     fn stop(&self) {
@@ -78,4 +79,14 @@ impl Drop for Hotspot {
     fn drop(&mut self) {
         self.stop()
     }
+}
+
+#[derive(Debug, Display, Error)]
+pub enum HotspotError {
+    #[display(fmt = "failed to activate hotspot")]
+    NotActivated,
+    #[display(fmt = "failed to execute hotspot command")]
+    CommandError,
+    #[display(fmt = "failed to parse output from hotspot command")]
+    CommandOutputError,
 }

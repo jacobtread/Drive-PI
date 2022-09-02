@@ -25,6 +25,7 @@ pub struct LSBLKOutput {
 }
 
 type DrivesResult<T> = Result<T, DrivesError>;
+type DrivesResultEmpty = DrivesResult<()>;
 
 /// Retrieves a list of mounted and unmounted drives using the lsblk command
 /// and returns the result.
@@ -35,7 +36,7 @@ pub fn get_drive_list() -> DrivesResult<DriveVec> {
             "-o", LSBLK_OUTPUT_CONTENTS /* Output contents list*/
         ])
         .output()
-        .map_err(|_| DrivesError::SystemError)?
+        .map_err(|_| DrivesError::IOError)?
         .stdout;
     let devices = serde_json::from_slice::<LSBLKOutput>(&output)
         .map_err(|err| {
@@ -61,7 +62,7 @@ pub fn get_drive_list() -> DrivesResult<DriveVec> {
 /// Handles mounting drives to local paths relative to the executable
 /// drives will be mounted to ./mount/{DRIVE_NAME} this is to avoid
 /// permission issues. Mounts drive as Read/Write
-pub fn mount_drive(path: &String, name: &String) -> DrivesResult<()> {
+pub fn mount_drive(path: &String, name: &String) -> DrivesResultEmpty {
     // Ensure the local mounting root point exists or create it
     let mount_dir = Path::new(MOUNT_DIR);
     if !mount_dir.exists() {
@@ -95,7 +96,7 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResult<()> {
         .output()
         .map_err(|err| {
             error!("Failed to execute mount command: {}", err);
-            DrivesError::MountError
+            DrivesError::IOError
         })?;
 
     let status = output.status;
@@ -112,13 +113,13 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResult<()> {
 }
 
 /// Unmounts the provided drive and removes it from the samba share
-pub fn unmount_drive(path: &String) -> DrivesResult<()> {
+pub fn unmount_drive(path: &String) -> DrivesResultEmpty {
     let output = Command::new("unmount")
         .args([path])
         .output()
         .map_err(|err| {
             error!("Failed to execute unmount command: {}", err);
-            DrivesError::UnmountError
+            DrivesError::IOError
         })?;
 
     let status = output.status;
@@ -135,7 +136,7 @@ pub fn unmount_drive(path: &String) -> DrivesResult<()> {
 }
 
 /// Unmounts and then remounts drive
-pub fn remount_drive(path: &String, name: &String) -> DrivesResult<()> {
+pub fn remount_drive(path: &String, name: &String) -> DrivesResultEmpty {
     unmount_drive(path)?;
     mount_drive(path, name)
 }

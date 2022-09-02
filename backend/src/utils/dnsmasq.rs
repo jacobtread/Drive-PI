@@ -4,6 +4,9 @@ use std::path::{Path};
 use std::process::exit;
 use log::error;
 
+const CONFIG_CONTENTS: &str = "address=/.local/10.42.0.1";
+const HOSTS_ENTRY: &str = "127.0.0.1 drivepi.local";
+
 /// Sets up dnsmasq to redirect the traffic for drivepi.local to the
 /// local machine.
 pub fn setup_dnsmasq() {
@@ -19,8 +22,6 @@ pub fn setup_dnsmasq() {
         });
 }
 
-const CONFIG_CONTENTS: &str = "address=/.local/10.42.0.1";
-
 /// Writes the config file at /etc/NetworkManager/dnsmasq-shared.d/hosts.conf
 /// with CONFIG_CONTENTS which indicates which domains to address to this machine
 fn write_config_file() -> Result<()> {
@@ -31,8 +32,6 @@ fn write_config_file() -> Result<()> {
     write(path, CONFIG_CONTENTS)?;
     Ok(())
 }
-
-const HOSTS_ENTRY: &str = "127.0.0.1 drivepi.local";
 
 /// Writes an entry to the /etc/hosts file which points localhost to
 /// drivepi.local which will be used by dnsmasq

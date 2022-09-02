@@ -1,5 +1,9 @@
 use std::io;
 use std::io::Error;
+
+use std::sync::PoisonError;
+use std::time::SystemTimeError;
+use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
 use derive_more::{Display, Error};
@@ -39,14 +43,14 @@ pub enum AuthStoreError {
 
 #[derive(Debug, Display, Error)]
 pub enum DrivesError {
-    #[display(fmt = "system error")]
-    SystemError,
     #[display(fmt = "parse error")]
     ParseError,
     #[display(fmt = "unmount error")]
     UnmountError,
     #[display(fmt = "mount error")]
     MountError,
+    #[display(fmt = "io error")]
+    IOError,
 }
 
 #[derive(Debug, Display, Error)]
@@ -59,6 +63,10 @@ pub enum FilesError {
 
 impl From<io::Error> for FilesError {
     fn from(_: Error) -> Self { FilesError::IOError }
+}
+
+impl From<io::Error> for DrivesError {
+    fn from(_: Error) -> Self { DrivesError::IOError }
 }
 
 
@@ -93,7 +101,26 @@ impl From<AuthStoreError> for AuthError {
     }
 }
 
+impl From<ToStrError> for AuthError {
+    fn from(_: ToStrError) -> Self {
+        AuthError::GenericError(GenericError::ServerError)
+    }
+}
+
+impl From<SystemTimeError> for AuthError {
+    fn from(_: SystemTimeError) -> Self {
+        AuthError::GenericError(GenericError::ServerError)
+    }
+}
+
+impl<Guard> From<PoisonError<Guard>> for AuthError {
+    fn from(_: PoisonError<Guard>) -> Self {
+        AuthError::GenericError(GenericError::ServerError)
+    }
+}
+
 impl ResponseError for GenericError {}
+
 impl ResponseError for DrivesError {}
 
 impl ResponseError for FilesError {
@@ -108,8 +135,7 @@ impl ResponseError for FilesError {
 impl ResponseError for AuthError {
     fn status_code(&self) -> StatusCode {
         match self {
-            AuthError::InvalidCredentials
-            | AuthError::InvalidToken => StatusCode::UNAUTHORIZED,
+            AuthError::InvalidCredentials | AuthError::InvalidToken => StatusCode::UNAUTHORIZED,
             AuthError::MissingToken => StatusCode::BAD_REQUEST,
             AuthError::GenericError(err) => err.status_code()
         }

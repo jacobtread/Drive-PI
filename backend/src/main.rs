@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, scope};
 use dotenv::dotenv;
-use log::{info, warn};
+use log::{error, info, warn};
 
 use stores::auth::AuthStore;
 
@@ -47,7 +47,11 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Start hotspot
-    let _ = Hotspot::start();
+    let hotspot_result = Hotspot::start();
+    if let Err(err) = hotspot_result {
+        error!("Failed to start hotspot: {}", err)
+    }
+
     // Configure domain (drivepi.local)
     setup_dnsmasq();
 
