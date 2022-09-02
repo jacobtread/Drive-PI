@@ -8,6 +8,7 @@ use actix_web::web::Json;
 use rand::{Rng, thread_rng};
 
 pub type JsonResult<R, E> = Result<Json<R>, E>;
+pub type JsonEmpty<E> = Result<Json<()>, E>;
 
 /// Creates the charset used for generating random strings. This
 /// function is separate so that create_random_string can be used
@@ -36,6 +37,8 @@ pub fn create_random_string(charset: &Vec<char>, length: usize) -> String {
     return result;
 }
 
-pub fn setup_hotspot() {
+pub fn setup_hotspot() {}
 
+pub fn ok_json<V, E>(value: V) -> Result<Json<V>, E> {
+    return Ok(Json(value));
 }

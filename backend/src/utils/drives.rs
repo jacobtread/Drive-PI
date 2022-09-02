@@ -1,43 +1,21 @@
 use std::fs;
 use std::path::Path;
 use serde_with::{serde_as, VecSkipError};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::process::Command;
 use log::{error, warn};
+use crate::models::drives::DriveVec;
 use crate::models::errors::DrivesError;
-use crate::utils::samba::unshare_drive;
+
+pub const MOUNT_DIR: &str = "mount";
+const LSBLK_OUTPUT_CONTENTS: &str = "UUID,NAME,LABEL,PATH,MOUNTPOINT,FSSIZE,FSUSED,MODE";
 
 #[serde_as]
 #[derive(Deserialize)]
 pub struct BlockDevice {
     name: String,
     #[serde_as(as = "Option<VecSkipError<_>>")]
-    children: Option<Vec<Drive>>,
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub struct Drive {
-    // Filesystem UUID (e.g. 21c89e37-a0aa-48bc-aead-cec8d9a8e8cc)
-    uuid: String,
-    // Device name (e.g. sda1)
-    name: String,
-    // Filesystem label (e.g. USB Drive)
-    label: String,
-    // Path to device node (e.g. /dev/sda1)
-    path: String,
-    // Mounted file system path (e.g. /run/media/DRIVE)
-    // this is None if not mounted
-    #[serde(rename(deserialize = "mountpoint"))]
-    mount: Option<String>,
-    // Filesystem capacity. None if file system not mounted
-    #[serde(rename(deserialize = "fssize"))]
-    size: Option<String>,
-    // Filesystem used size. None if file system not mounted
-    #[serde(rename(deserialize = "fsused"))]
-    used: Option<String>,
-    // Filesystem mount mode (e.g. brw-rw----)
-    mode: String,
+    children: Option<DriveVec>,
 }
 
 #[derive(Deserialize)]
@@ -46,13 +24,11 @@ pub struct LSBLKOutput {
     devices: Vec<BlockDevice>,
 }
 
-const LSBLK_OUTPUT_CONTENTS: &str = "UUID,NAME,LABEL,PATH,MOUNTPOINT,FSSIZE,FSUSED,MODE";
-
 type DrivesResult<T> = Result<T, DrivesError>;
 
 /// Retrieves a list of mounted and unmounted drives using the lsblk command
 /// and returns the result.
-pub fn get_drive_list() -> DrivesResult<Vec<Drive>> {
+pub fn get_drive_list() -> DrivesResult<DriveVec> {
     let output = Command::new("lsblk")
         .args([
             "-J" /* Output result as JSON */,
@@ -82,8 +58,6 @@ pub fn get_drive_list() -> DrivesResult<Vec<Drive>> {
     return Ok(drives);
 }
 
-pub const MOUNT_DIR: &str = "mount";
-
 /// Handles mounting drives to local paths relative to the executable
 /// drives will be mounted to ./mount/{DRIVE_NAME} this is to avoid
 /// permission issues. Mounts drive as Read/Write
@@ -111,7 +85,7 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResult<()> {
 
     let mount_path_str = mount_path
         .to_str()
-        .ok_or_else(||DrivesError::MountError)?;
+        .ok_or_else(|| DrivesError::MountError)?;
 
     let output = Command::new("mount")
         .args([
@@ -156,7 +130,12 @@ pub fn unmount_drive(path: &String) -> DrivesResult<()> {
         warn!("Failed to unmount drive {}", stderr);
         Err(DrivesError::UnmountError)
     } else {
-        unshare_drive(path);
         Ok(())
     }
+}
+
+/// Unmounts and then remounts drive
+pub fn remount_drive(path: &String, name: &String) -> DrivesResult<()> {
+    unmount_drive(path)?;
+    mount_drive(path, name)
 }
