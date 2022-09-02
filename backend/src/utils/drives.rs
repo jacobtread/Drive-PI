@@ -82,7 +82,7 @@ pub fn get_drive_list() -> DrivesResult<Vec<Drive>> {
     return Ok(drives);
 }
 
-const MOUNT_DIR: &str = "mount";
+pub const MOUNT_DIR: &str = "mount";
 
 /// Handles mounting drives to local paths relative to the executable
 /// drives will be mounted to ./mount/{DRIVE_NAME} this is to avoid

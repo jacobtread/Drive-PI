@@ -1,3 +1,5 @@
+use std::io;
+use std::io::Error;
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
 use derive_more::{Display, Error};
@@ -70,7 +72,14 @@ pub enum FilesError {
     NotFile,
     #[display(fmt = "path was not a directory")]
     NotDirectory,
+    #[display(fmt = "io error")]
+    IOError,
 }
+
+impl From<io::Error> for FilesError {
+    fn from(_: Error) -> Self { FilesError::IOError }
+}
+
 
 /// Helper function to be passed into map_err to
 /// provide a server error like:
@@ -124,7 +133,7 @@ impl ResponseError for FilesError {
     fn status_code(&self) -> StatusCode {
         match self {
             FilesError::PermissionError => StatusCode::UNAUTHORIZED,
-            FilesError::ReadError | FilesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
+            FilesError::ReadError | FilesError::IOError | FilesError::DeleteError => StatusCode::INTERNAL_SERVER_ERROR,
             FilesError::PathNotFound | FilesError::FileNotFound => StatusCode::NOT_FOUND,
             FilesError::NotFile | FilesError::NotDirectory => StatusCode::BAD_REQUEST
         }
