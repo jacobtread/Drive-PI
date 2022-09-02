@@ -94,18 +94,7 @@ impl From<AuthStoreError> for AuthError {
 }
 
 impl ResponseError for GenericError {}
-
-impl ResponseError for DrivesError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            DrivesError::UnmountError
-            | DrivesError::MountError
-            | DrivesError::SystemError
-            | DrivesError::ParseError
-            => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-}
+impl ResponseError for DrivesError {}
 
 impl ResponseError for FilesError {
     fn status_code(&self) -> StatusCode {
