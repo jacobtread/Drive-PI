@@ -13,8 +13,11 @@ echo nameserver 8.8.8.8 | tee /etc/resolv.conf
 # Install network manager, samba and dnsmasq
 apt-get install -y network-manager samba dnsmasq
 
-# Restart dnsmasq
-systemctl restart dnsmasq
+systemctl start NetworkManager
+systemctl enable NetworkManager
+
+# Stop dnsmasq network manager starts it for us
+systemctl stop dnsmasq
 
 # Allow samba through the firewall
 sudo ufw allow samba
