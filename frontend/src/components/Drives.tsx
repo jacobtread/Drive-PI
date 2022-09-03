@@ -16,7 +16,13 @@ export interface Drive {
     size: string | null; // capacity
     used: string | null; // Used size
     mode: string; // fs mount mode
+    shared: boolean;
     error: string | null;
+}
+
+interface DrivesResponse {
+    drives: Drive[],
+    mount_root: string;
 }
 
 const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
@@ -33,13 +39,16 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
 
     async function getDrives() {
         console.log('Loading Drives')
-        await request<Drive[]>({
+        await request<DrivesResponse>({
             method: "GET",
             path: "drives"
         })
-            .then(drives => {
-                let sortedDrives = drives.sort(drive => drive.mount === null ? 0 : -1);
-                setDrives(sortedDrives)
+            .then(response => {
+                let drives = response.drives.sort(drive => drive.mount === null ? 0 : -1);
+                drives.forEach(drive => {
+                    drive.shared = drive.mount !== null && drive.mount.startsWith(response.mount_root)
+                })
+                setDrives(drives)
             })
             .catch(console.error)
     }
@@ -94,6 +103,29 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
         }
     }
 
+    async function share(drive: Drive) {
+        setUnmounting(values => [...values, drive.uuid]);
+        try {
+            console.log('Sharing drive', drive)
+
+            await request({
+                method: "PUT",
+                path: "drives",
+                body: {
+                    drive_path: drive.path,
+                    mount_path: drive.name
+                }
+            })
+            await getDrives()
+        } catch (e) {
+            console.error(e)
+            drive.error = "Failed to share";
+            setDrives(drives => drives);
+        } finally {
+            setUnmounting(values => values.filter(value => value !== drive.uuid));
+        }
+    }
+
     return (
         <div className="drives">
             <button onClick={() => getDrives()} className="button">Refresh</button>
@@ -102,24 +134,42 @@ const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
                 let details: ReactElement;
                 let actions: ReactElement;
                 if (drive.mount != null) {
-                    actionText = "Unmounting"
-                    actions = (
-                        <div className="drive__actions">
-                            <button className="button" onClick={() => setSelected(drive)}>
-                                View
-                            </button>
-                            <button className="button" onClick={() => unmount(drive)}>
-                                Unmount
-                            </button>
-                        </div>
-                    )
-                    details = (
-                        <div className="drive__details">
-                            <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
-                            <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span></p>
-                            <p className="drive__mount">Mounted at {drive.mount}</p>
-                        </div>
-                    )
+                    if (drive.shared) {
+                        actionText = "Unmounting"
+                        actions = (
+                            <div className="drive__actions">
+                                <button className="button" onClick={() => setSelected(drive)}>
+                                    View
+                                </button>
+                                <button className="button" onClick={() => unmount(drive)}>
+                                    Unmount
+                                </button>
+                            </div>
+                        )
+                        details = (
+                            <div className="drive__details">
+                                <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
+                                <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span></p>
+                                <p className="drive__mount">Mounted at {drive.mount}</p>
+                            </div>
+                        )
+                    } else {
+                        actionText = "Sharing"
+                        actions = (
+                            <div className="drive__actions">
+                                <button className="button" onClick={() => share(drive)}>
+                                    Share
+                                </button>
+                            </div>
+                        )
+                        details = (
+                            <div className="drive__details">
+                                <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
+                                <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span></p>
+                                <p className="drive__mount">Drive not being shared</p>
+                            </div>
+                        )
+                    }
                 } else {
                     actionText = "Mounting"
                     actions = (
