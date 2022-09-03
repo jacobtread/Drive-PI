@@ -1,9 +1,10 @@
-use std::fs;
-use std::path::Path;
+use std::{fs, io};
+use std::fs::remove_dir;
+use std::path::{Path, PathBuf};
 use serde_with::{serde_as, VecSkipError};
 use serde::Deserialize;
 use std::process::Command;
-use log::{error, warn};
+use log::{error, info, warn};
 use crate::models::drives::{DrivesResponse, DriveVec};
 use crate::models::errors::DrivesError;
 
@@ -64,8 +65,7 @@ pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
             }
         }
     }
-    let mount_dir = Path::new(MOUNT_DIR)
-        .canonicalize()?;
+    let mount_dir = get_mount_root()?;
     let mount_path = mount_dir.to_str()
         .ok_or_else(|| DrivesError::IOError)?;
 
@@ -73,6 +73,10 @@ pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
         drives,
         mount_root: mount_path.to_string(),
     });
+}
+
+pub fn get_mount_root() -> io::Result<PathBuf> {
+    Path::new(MOUNT_DIR).canonicalize()
 }
 
 /// Handles mounting drives to local paths relative to the executable
@@ -129,7 +133,7 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResultEmpty {
 }
 
 /// Unmounts the provided drive and removes it from the samba share
-pub fn unmount_drive(path: &String) -> DrivesResultEmpty {
+pub fn unmount_drive(path: &String, name: &String) -> DrivesResultEmpty {
     let output = Command::new("umount")
         .args([path])
         .output()
@@ -137,6 +141,24 @@ pub fn unmount_drive(path: &String) -> DrivesResultEmpty {
             error!("Failed to execute unmount on {} command: {}",path,  err);
             DrivesError::IOError
         })?;
+
+    let mount_dir = get_mount_root()?;
+    let mount_path = mount_dir
+        .join(name);
+    if mount_path.exists() {
+        let is_empty = fs::read_dir(&mount_path)?
+            .next()
+            .is_none();
+
+        if is_empty {
+            remove_dir(&mount_path)?;
+            let mount_path_str = mount_path
+                .to_str()
+                .ok_or_else(|| DrivesError::IOError)?;
+            info!("Removed directory of unmounted drive: {}", mount_path_str)
+        }
+    }
+
 
     let status = output.status;
 
@@ -153,6 +175,6 @@ pub fn unmount_drive(path: &String) -> DrivesResultEmpty {
 
 /// Unmounts and then remounts drive
 pub fn remount_drive(path: &String, name: &String) -> DrivesResultEmpty {
-    unmount_drive(path)?;
+    unmount_drive(path, name)?;
     mount_drive(path, name)
 }

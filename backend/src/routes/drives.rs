@@ -1,6 +1,6 @@
 use actix_web::{delete, get, post, put, web};
 use actix_web::web::Json;
-use crate::models::drives::{MountRequest, UnmountRequest, DrivesResponse};
+use crate::models::drives::{MountRequest, DrivesResponse};
 use crate::models::errors::DrivesError;
 use crate::utils::drives::{get_drive_list, mount_drive, unmount_drive, remount_drive};
 use crate::utils::{JsonResult, ok_json, ok_json_empty};
@@ -29,8 +29,8 @@ pub async fn mount(body: Json<MountRequest>) -> DrivesResultEmpty {
 }
 
 #[delete("/drives")]
-pub async fn unmount(body: Json<UnmountRequest>) -> DrivesResultEmpty {
-    unmount_drive(&body.path)?;
+pub async fn unmount(body: Json<MountRequest>) -> DrivesResultEmpty {
+    unmount_drive(&body.path, &body.name)?;
     ok_json_empty()
 }
 

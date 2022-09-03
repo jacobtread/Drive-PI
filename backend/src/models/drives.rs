@@ -37,8 +37,3 @@ pub struct MountRequest {
     pub path: String,
     pub name: String,
 }
-
-#[derive(Deserialize)]
-pub struct UnmountRequest {
-    pub path: String,
-}
