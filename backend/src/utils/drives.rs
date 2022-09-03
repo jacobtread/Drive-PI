@@ -4,7 +4,7 @@ use serde_with::{serde_as, VecSkipError};
 use serde::Deserialize;
 use std::process::Command;
 use log::{error, warn};
-use crate::models::drives::DriveVec;
+use crate::models::drives::{DrivesResponse, DriveVec};
 use crate::models::errors::DrivesError;
 
 pub const MOUNT_DIR: &str = "mount";
@@ -29,7 +29,7 @@ type DrivesResultEmpty = DrivesResult<()>;
 
 /// Retrieves a list of mounted and unmounted drives using the lsblk command
 /// and returns the result.
-pub fn get_drive_list() -> DrivesResult<DriveVec> {
+pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
     let output = Command::new("lsblk")
         .args([
             "-J" /* Output result as JSON */,
@@ -45,6 +45,7 @@ pub fn get_drive_list() -> DrivesResult<DriveVec> {
         })?
         .devices;
 
+
     let mut drives = Vec::new();
     for device in devices {
         if device.name.starts_with("loop") {
@@ -52,11 +53,26 @@ pub fn get_drive_list() -> DrivesResult<DriveVec> {
         }
         if let Some(children) = device.children {
             for drive in children {
+                if let Some(mount) = &drive.mount {
+                    // Exclude system parts
+                    if mount == "/" || mount == "/boot/firmware" {
+                        continue;
+                    }
+                }
+
                 drives.push(drive)
             }
         }
     }
-    return Ok(drives);
+    let mount_dir = Path::new(MOUNT_DIR)
+        .canonicalize()?;
+    let mount_path = mount_dir.to_str()
+        .ok_or_else(|| DrivesError::IOError)?;
+
+    return Ok(DrivesResponse {
+        drives,
+        mount_root: mount_path.to_string(),
+    });
 }
 
 /// Handles mounting drives to local paths relative to the executable

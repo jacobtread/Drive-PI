@@ -1,7 +1,7 @@
 use std::fs::{read_to_string, remove_file, write};
 use std::io::{Result};
 use std::path::{Path};
-use std::process::exit;
+use std::process::{Command, exit};
 use log::error;
 
 const HOSTS_FILE_PATH: &str = "/etc/hosts";
@@ -22,6 +22,8 @@ pub fn setup_dnsmasq() {
             error!("Error writing dnsmasq hosts file entry: {}", err);
             exit(6)
         });
+
+    restart_service()
 }
 
 /// Writes the config file at /etc/NetworkManager/dnsmasq-shared.d/hosts.conf
@@ -47,4 +49,11 @@ fn write_hosts_entry() -> Result<()> {
         write(path, contents)?;
     }
     Ok(())
+}
+
+fn restart_service() {
+    Command::new("systemctl")
+        .args(["restart", "dnsmasq"])
+        .output()
+        .expect("Failed to restart dnsmasq");
 }

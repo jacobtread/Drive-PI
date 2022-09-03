@@ -7,8 +7,7 @@ use crate::utils::files::get_files_at;
 use crate::utils::{JsonResult, ok_json};
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(list);
+    cfg.service(list);
 }
 
 type FilesResult<T> = JsonResult<T, FilesError>;

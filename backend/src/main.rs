@@ -9,7 +9,7 @@ use stores::auth::AuthStore;
 use crate::routes::auth_scope;
 use crate::utils::dnsmasq::setup_dnsmasq;
 use crate::utils::get_env_port;
-use crate::utils::hotspot::{Hotspot};
+use crate::utils::hotspot::start_hotspot;
 
 mod routes;
 
@@ -39,10 +39,11 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Start hotspot
-    let hotspot_result = Hotspot::start();
+    let hotspot_result = start_hotspot();
     if let Err(err) = hotspot_result {
         error!("Failed to start hotspot: {}", err)
     }
+
 
     // Configure domain (drivepi.local)
     setup_dnsmasq();
