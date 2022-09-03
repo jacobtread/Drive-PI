@@ -130,11 +130,11 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResultEmpty {
 
 /// Unmounts the provided drive and removes it from the samba share
 pub fn unmount_drive(path: &String) -> DrivesResultEmpty {
-    let output = Command::new("unmount")
+    let output = Command::new("umount")
         .args([path])
         .output()
         .map_err(|err| {
-            error!("Failed to execute unmount command: {}", err);
+            error!("Failed to execute unmount on {} command: {}",path,  err);
             DrivesError::IOError
         })?;
 
