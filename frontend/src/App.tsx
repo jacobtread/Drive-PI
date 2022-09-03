@@ -2,8 +2,9 @@ import React, { FunctionComponent, useState } from "react";
 import Auth from "$components/Auth";
 import { useHasAccess } from "$components/AccessProvider";
 import Heading from "$components/Heading";
-import Drives, { DriveItem } from "$components/Drives";
+import Drives from "$components/Drives";
 import FileBrowser from "$components/FileBrowser";
+import { DriveItem } from "$api/models";
 
 /**
  * Root app components which contains all the routes

@@ -1,5 +1,6 @@
 import { createContext, FunctionComponent, PropsWithChildren, useContext, useEffect, useState } from "react";
 import { request, Route, RouteMethod, Token } from "$api/request";
+import { CheckResponse } from "$api/models";
 
 const LOCAL_STORAGE_KEY: string = "drivepi_token";
 
@@ -8,11 +9,6 @@ interface AccessContextType {
     setToken: (token: Token) => void;
     request: <V>(method: RouteMethod, path: Route, body?: any) => Promise<V>;
     logout: () => void;
-}
-
-interface CheckResponse {
-    valid: boolean;
-    expiry_time: number;
 }
 
 // The context which stores our access

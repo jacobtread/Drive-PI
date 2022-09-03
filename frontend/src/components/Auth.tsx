@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, FunctionComponent, useState } from "react";
 import { useAccess } from "$components/AccessProvider";
 import { request } from "$api/request";
 import LogoSide from "$assets/images/logo-side.svg"
+import { AuthResponse } from "$api/models";
 
 enum State {
     INITIAL,
@@ -14,11 +15,6 @@ interface AuthState {
     username: string;
     password: string;
     error: string;
-}
-
-interface AuthResponse {
-    token: string;
-    expiry_time: number;
 }
 
 const Auth: FunctionComponent = () => {
@@ -45,9 +41,7 @@ const Auth: FunctionComponent = () => {
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        tryAuthenticate()
-            .then()
-            .catch()
+        tryAuthenticate().then()
     }
 
     async function tryAuthenticate() {
