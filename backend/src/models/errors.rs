@@ -49,6 +49,8 @@ pub enum DrivesError {
     UnmountError,
     #[display(fmt = "mount error")]
     MountError,
+    #[display(fmt = "Target device is busy cannot unmount")]
+    TargetBusy,
     #[display(fmt = "io error")]
     IOError,
 }

@@ -166,8 +166,12 @@ pub fn unmount_drive(path: &String, name: &String) -> DrivesResultEmpty {
         let stderr = String::from_utf8(output.stderr)
             .unwrap_or(String::from("Failed to parse stderr"));
 
-        warn!("Failed to unmount drive {}", stderr);
-        Err(DrivesError::UnmountError)
+        if stderr.contains("target is busy") {
+            Err(DrivesError::TargetBusy)
+        } else {
+            warn!("Failed to unmount drive {}", stderr);
+            Err(DrivesError::UnmountError)
+        }
     } else {
         Ok(())
     }
