@@ -1,18 +1,18 @@
 import React, { FunctionComponent, useState } from "react";
 import Auth from "$components/Auth";
-import { useHasAccess } from "$components/AccessProvider";
-import Heading from "$components/Heading";
+import { useAccess } from "$components/AccessProvider";
 import Drives from "$components/Drives";
 import FileBrowser from "$components/FileBrowser";
 import { DriveItem } from "$api/models";
+import LogoSide from "$assets/images/logo-side.svg"
 
 /**
  * Root app components which contains all the routes
  * and the access provider
  */
 const App: FunctionComponent = () => {
-    const hasAccess = useHasAccess()
-    if (!hasAccess) {
+    const {token, logout} = useAccess();
+    if (token === null) {
         return <Auth/>
     }
 
@@ -20,7 +20,15 @@ const App: FunctionComponent = () => {
 
     return (
         <div className="home">
-            <Heading/>
+            <div className="heading">
+                <img src={LogoSide} alt="Logo" className="heading__logo"/>
+                <div>
+                    <h1 className="heading__title">Drive-PI</h1>
+                    <button onClick={logout} className="button heading__logout">
+                        Logout
+                    </button>
+                </div>
+            </div>
             <main className="main">
                 <Drives selected={selected} setSelected={setSelected}/>
                 <FileBrowser drive={selected}/>
