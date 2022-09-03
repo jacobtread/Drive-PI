@@ -77,7 +77,7 @@ const Drives: FunctionComponent<Properties> = (properties) => {
             [DriveAction.UNMOUNTING]: "DELETE"
         };
         const method: RouteMethod = actionMethods[action];
-        const body = {path: drive.path, name: drive.name};
+        const body = {path: drive.path, name: drive.label};
         // Make action request on backend API
         await request(method, "drives", body);
         // Reload the drives list
