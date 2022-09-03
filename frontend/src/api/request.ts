@@ -3,28 +3,38 @@ const API_BASE_URL: string = import.meta.env.VITE_APP_URL;
 
 export type Token = string | null;
 
-export type RequestMethod = "GET" | "POST" | "PUT" | "DELETE";
+// Possible methods for the backend API
+export type RouteMethod = "GET"
+    | "POST"
+    | "PUT"
+    | "DELETE";
 
-export interface RequestData {
-    method: RequestMethod;
-    path: string;
-    body?: any;
-}
+// Possible routes for the backend API
+export type Route = "drives"
+    | "files"
+    | "auth"
 
-export function request<T>(requestData: RequestData, token: Token = null): Promise<T> {
-    const init: RequestInit = {method: requestData.method};
+export type ErrorResponse = [number, string];
+
+export function request<T>(
+    method: RouteMethod,
+    route: Route,
+    body: any = null,
+    token: Token = null
+): Promise<T> {
+    const init: RequestInit = {method};
     const headers: Record<string, string> = {};
     if (token != null) {
         headers["X-Token"] = token;
     }
-    if (requestData.method !== "GET" && requestData.body) {
+    if (method !== "GET" && body !== null) {
         headers["Content-Type"] = "application/json";
-        init.body = JSON.stringify(requestData.body);
+        init.body = JSON.stringify(body);
     }
     init.headers = headers;
 
     return new Promise((resolve, reject) => {
-        fetch(`${API_BASE_URL}/${requestData.path}`, init)
+        fetch(`${API_BASE_URL}/${route}`, init)
             .then(response => {
                 if (Math.floor(response.status / 100) === 2) {
                     response.json()

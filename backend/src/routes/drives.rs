@@ -24,18 +24,18 @@ pub async fn list() -> DrivesResult<DrivesResponse> {
 
 #[post("/drives")]
 pub async fn mount(body: Json<MountRequest>) -> DrivesResultEmpty {
-    mount_drive(&body.drive_path, &body.mount_path)?;
+    mount_drive(&body.path, &body.name)?;
     ok_json_empty()
 }
 
 #[delete("/drives")]
 pub async fn unmount(body: Json<UnmountRequest>) -> DrivesResultEmpty {
-    unmount_drive(&body.drive_path)?;
+    unmount_drive(&body.path)?;
     ok_json_empty()
 }
 
 #[put("/drives")]
 pub async fn remount(body: Json<MountRequest>) -> DrivesResultEmpty {
-    remount_drive(&body.drive_path, &body.mount_path)?;
+    remount_drive(&body.path, &body.name)?;
     ok_json_empty()
 }

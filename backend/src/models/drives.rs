@@ -34,11 +34,11 @@ pub struct Drive {
 
 #[derive(Deserialize)]
 pub struct MountRequest {
-    pub drive_path: String,
-    pub mount_path: String,
+    pub path: String,
+    pub name: String,
 }
 
 #[derive(Deserialize)]
 pub struct UnmountRequest {
-    pub drive_path: String,
+    pub path: String,
 }

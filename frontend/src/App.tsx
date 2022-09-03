@@ -2,7 +2,7 @@ import React, { FunctionComponent, useState } from "react";
 import Auth from "$components/Auth";
 import { useHasAccess } from "$components/AccessProvider";
 import Heading from "$components/Heading";
-import Drives, { Drive } from "$components/Drives";
+import Drives, { DriveItem } from "$components/Drives";
 import FileBrowser from "$components/FileBrowser";
 
 /**
@@ -15,7 +15,7 @@ const App: FunctionComponent = () => {
         return <Auth/>
     }
 
-    const [selected, setSelected] = useState<Drive | null>(null)
+    const [selected, setSelected] = useState<DriveItem | null>(null)
 
     return (
         <div className="home">

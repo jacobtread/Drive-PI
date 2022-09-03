@@ -1,9 +1,9 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import { Drive } from "$components/Drives";
+import { DriveItem } from "$components/Drives";
 import { useAccess } from "$components/AccessProvider";
 
 interface Properties {
-    drive: Drive | null
+    drive: DriveItem | null
 }
 
 interface DriveFile {
@@ -21,11 +21,6 @@ interface ListFilesResponse {
     drive_path: string;
     folders: DrivePath[];
     files: DriveFile[];
-}
-
-interface State {
-    path: string;
-    history: string[];
 }
 
 interface DriveState {
@@ -77,11 +72,10 @@ const FileBrowser: FunctionComponent<Properties> = ({drive}) => {
 
     async function getFiles(path: string, drive_path: string) {
         try {
-            const {files, folders} = await request<ListFilesResponse>({
-                method: "POST",
-                path: "files/list",
-                body: {path, drive_path}
-            })
+            const {files, folders}: ListFilesResponse = await request("POST", "files", {
+                path,
+                drive_path
+            });
             setDriveState({files, folders})
         } catch (e) {
             console.error(e)

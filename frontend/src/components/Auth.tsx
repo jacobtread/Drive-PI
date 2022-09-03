@@ -53,15 +53,10 @@ const Auth: FunctionComponent = () => {
     async function tryAuthenticate() {
         setState({...state, state: State.LOADING})
         try {
-            const response = await request<AuthResponse>({
-                method: "POST",
-                path: "auth",
-                body: {
-                    username: state.username,
-                    password: state.password
-                }
+            const response: AuthResponse = await request("POST", "auth", {
+                username: state.username,
+                password: state.password
             });
-
             setToken(response.token)
         } catch (e: any) {
             const [statusCode, error] = e as [number, string];
@@ -71,7 +66,6 @@ const Auth: FunctionComponent = () => {
             } else {
                 errorText = error
             }
-
             setState({...state, state: State.ERROR, error: errorText})
         }
     }
@@ -109,7 +103,6 @@ const Auth: FunctionComponent = () => {
                     <button className="button" type="submit">Login</button>
                 </form>
             </div>
-
         </div>
     )
 }

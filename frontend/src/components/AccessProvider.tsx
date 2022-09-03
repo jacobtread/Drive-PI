@@ -1,12 +1,12 @@
 import { createContext, FunctionComponent, PropsWithChildren, useContext, useEffect, useState } from "react";
-import { request, RequestData, Token } from "$api/request";
+import { request, Route, RouteMethod, Token } from "$api/request";
 
 const LOCAL_STORAGE_KEY: string = "drivepi_token";
 
 interface AccessContextType {
     token: Token;
     setToken: (token: Token) => void;
-    request: <V>(requestData: RequestData) => Promise<V>;
+    request: <V>(method: RouteMethod, path: Route, body?: any) => Promise<V>;
     logout: () => void;
 }
 
@@ -47,10 +47,7 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
     async function checkToken() {
         if (token == null) return;
         try {
-            const response = await wrapRequest<CheckResponse>({
-                method: "GET",
-                path: "auth"
-            });
+            const response: CheckResponse = await wrapRequest("GET", "auth");
             if (!response.valid) {
                 setToken(null);
             }
@@ -71,10 +68,16 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
     /**
      * Wrapper function which wraps the token into the request
      *
-     * @param requestData The request data.
+     * @param method The request method
+     * @param path The request path
+     * @param body The optional request body
      */
-    function wrapRequest<V>(requestData: RequestData): Promise<V> {
-        return request<V>(requestData, token);
+    function wrapRequest<V>(
+        method: RouteMethod,
+        path: Route,
+        body: any = null
+    ): Promise<V> {
+        return request<V>(method, path, body, token);
     }
 
     /**
@@ -83,10 +86,7 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
      */
     async function logout() {
         try {
-            await wrapRequest({
-                method: "DELETE",
-                path: "auth"
-            });
+            await wrapRequest("DELETE", "auth");
         } catch (e) {
             console.error(e);
         } finally {

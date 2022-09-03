@@ -1,215 +1,108 @@
-import { FunctionComponent, ReactElement, useEffect, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
+import { ErrorResponse, RouteMethod } from "$api/request";
 import { useAccess } from "$components/AccessProvider";
-import USB from "$assets/images/usb.svg"
+import Drive, { DriveAction } from "$components/Drive";
+import { DriveItem, DrivesResponse } from "$api/models";
 
 interface Properties {
-    selected: Drive | null,
-    setSelected: (drive: Drive | null) => void
+    selected: DriveItem | null;
+    setSelected: (drive: DriveItem | null) => void
 }
 
-export interface Drive {
-    uuid: string; // fs UUID
-    name: string; // Device name
-    label: string; // fs label
-    path: string; // Path to device node
-    mount: string | null; // fs mount point
-    size: string | null; // capacity
-    used: string | null; // Used size
-    mode: string; // fs mount mode
-    shared: boolean;
-    error: string | null;
-}
-
-interface DrivesResponse {
-    drives: Drive[],
-    mount_root: string;
-}
-
-const Drives: FunctionComponent<Properties> = ({selected, setSelected}) => {
+const Drives: FunctionComponent<Properties> = (properties) => {
     const {request} = useAccess();
+    const {selected, setSelected} = properties;
 
-    const [drives, setDrives] = useState<Drive[]>([])
-    const [unmounting, setUnmounting] = useState<string[]>([])
+    const [mountRoot, setMountRoot] = useState<string>("");
+    const [drives, setDrives] = useState<DriveItem[]>([]);
 
-    useEffect(() => {
-        getDrives()
-            .then()
-            .catch()
-    }, [])
+    /**
+     * Function which loads the drives from the backend api
+     * using the GET /drives sorts the returned values and
+     * updates the drives and mountRoot states
+     */
+    async function loadDrives() {
+        console.log("Loading drives")
+        try {
+            // Load drives from backend API
+            const response: DrivesResponse = await request("GET", "drives");
 
-    async function getDrives() {
-        console.log('Loading Drives')
-        await request<DrivesResponse>({
-            method: "GET",
-            path: "drives"
-        })
-            .then(response => {
-                let drives = response.drives.sort(drive => drive.mount === null ? 0 : -1);
-                drives.forEach(drive => {
-                    drive.shared = drive.mount !== null && drive.mount.startsWith(response.mount_root)
-                })
-                setDrives(drives)
-            })
-            .catch(console.error)
+            // The absolute path to the mounting route for the drives
+            // used to determine whether the drive is shared
+            const mountRoot: string = response.mount_root;
+
+            // Create sorted copy of the drives sorting mounted drives to the top
+            // ensuring that those mounted at the root are ranked highest
+            const drives: DriveItem[] = response.drives
+                .sort((a, b) => {
+                    if (a.mount !== null && b.mount !== null) {
+                        const aShared = a.mount.startsWith(mountRoot);
+                        const bShared = b.mount.startsWith(mountRoot);
+
+                        // Sort based on shared state if both are mounted
+                        // (those who are shared appear earlier in array)
+                        return Number(bShared) - Number(aShared);
+                    } else {
+                        // Sort based on mount state comparison
+                        // (those who are mounted appear earlier in array)
+                        return Number(b.mount !== null) - Number(a.mount !== null);
+                    }
+                });
+
+            setMountRoot(mountRoot);
+            setDrives(drives);
+        } catch (e) {
+            const error = e as ErrorResponse
+            console.error(`Failed to load drives response: ${error[0]} ${error[1]}`);
+        }
     }
 
-    async function unmount(drive: Drive) {
-        if (selected !== null && selected.uuid === drive.uuid) {
+    /**
+     * Handles executing the underlying drive action on the
+     * backend API. This function is provided to the drive
+     * components. The drives list is reloaded after the
+     * action is complete
+     *
+     * @param drive The drive the action is for
+     * @param action The action to execute
+     */
+    async function doAction(drive: DriveItem, action: DriveAction) {
+        if (action === DriveAction.UNMOUNTING
+            && selected !== null && selected.name === drive.name) {
             setSelected(null)
         }
-
-        setUnmounting(values => [...values, drive.uuid]);
-
-        try {
-            console.log('Unmounting drive', drive)
-
-            await request({
-                method: "DELETE",
-                path: "drives",
-                body: {drive_path: drive.path}
-            })
-
-            await getDrives()
-        } catch (e) {
-            console.error(e)
-            drive.error = "Failed to unmount";
-            setDrives(drives => drives);
-        } finally {
-            setUnmounting(values => values.filter(value => value !== drive.uuid));
-        }
+        const actionMethods: Record<DriveAction, RouteMethod> = {
+            [DriveAction.SHARING]: "PUT",
+            [DriveAction.MOUNTING]: "POST",
+            [DriveAction.UNMOUNTING]: "DELETE"
+        };
+        const method: RouteMethod = actionMethods[action];
+        const body = {path: drive.path, name: drive.name};
+        // Make action request on backend API
+        await request(method, "drives", body);
+        // Reload the drives list
+        await loadDrives();
     }
 
-    async function mount(drive: Drive) {
-        setUnmounting(values => [...values, drive.uuid]);
-
-        try {
-            console.log('Mounting drive', drive)
-
-            await request({
-                method: "POST",
-                path: "drives",
-                body: {
-                    drive_path: drive.path,
-                    mount_path: drive.name
-                }
-            })
-            await getDrives()
-        } catch (e) {
-            console.error(e)
-            drive.error = "Failed to mount";
-            setDrives(drives => drives);
-        } finally {
-            setUnmounting(values => values.filter(value => value !== drive.uuid));
-        }
-    }
-
-    async function share(drive: Drive) {
-        setUnmounting(values => [...values, drive.uuid]);
-        try {
-            console.log('Sharing drive', drive)
-
-            await request({
-                method: "PUT",
-                path: "drives",
-                body: {
-                    drive_path: drive.path,
-                    mount_path: drive.name
-                }
-            })
-            await getDrives()
-        } catch (e) {
-            console.error(e)
-            drive.error = "Failed to share";
-            setDrives(drives => drives);
-        } finally {
-            setUnmounting(values => values.filter(value => value !== drive.uuid));
-        }
-    }
+    // Load drives list on initial load
+    useEffect(() => {
+        loadDrives().then()
+    }, [])
 
     return (
         <div className="drives">
-            <button onClick={() => getDrives()} className="button">Refresh</button>
-            {drives.map((drive, index) => {
-                let actionText: string;
-                let details: ReactElement;
-                let actions: ReactElement;
-                if (drive.mount != null) {
-                    if (drive.shared) {
-                        actionText = "Unmounting"
-                        actions = (
-                            <div className="drive__actions">
-                                <button className="button" onClick={() => setSelected(drive)}>
-                                    View
-                                </button>
-                                <button className="button" onClick={() => unmount(drive)}>
-                                    Unmount
-                                </button>
-                            </div>
-                        )
-                        details = (
-                            <div className="drive__details">
-                                <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
-                                <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span></p>
-                                <p className="drive__mount">Mounted at {drive.mount}</p>
-                            </div>
-                        )
-                    } else {
-                        actionText = "Sharing"
-                        actions = (
-                            <div className="drive__actions">
-                                <button className="button" onClick={() => share(drive)}>
-                                    Share
-                                </button>
-                            </div>
-                        )
-                        details = (
-                            <div className="drive__details">
-                                <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
-                                <p className="drive__cap">Using <span>{drive.used}</span> of <span>{drive.size}</span></p>
-                                <p className="drive__mount">Drive not being shared</p>
-                            </div>
-                        )
-                    }
-                } else {
-                    actionText = "Mounting"
-                    actions = (
-                        <div className="drive__actions">
-                            <button className="button" onClick={() => mount(drive)}>
-                                Mount
-                            </button>
-                        </div>
-                    )
-                    details = (
-                        <div className="drive__details">
-                            <p className="drive__name">{drive.label} <span className="drive__name__sub">{drive.name}</span></p>
-                            <p className="drive__mount">Not Mounted</p>
-                        </div>
-                    )
-                }
-
-                return (
-                    <div key={index} className="drive">
-                        {drive.error && (
-                            <div className="drive__message">
-                                <p className="drive__message__text">{drive.error}</p>
-                            </div>
-                        )}
-                        {unmounting.indexOf(drive.uuid) != -1 && (
-                            <div className="drive__message">
-                                <p className="drive__message__text">{actionText} {drive.label} ({drive.path})</p>
-                                <div className="loader"></div>
-                            </div>
-                        )}
-                        <img src={USB} alt="" height={64} className="drive__icon"/>
-                        {details}
-                        <div className="drive__actions-wrapper">
-                            {actions}
-                        </div>
-                    </div>
-                )
-            })}
+            <button onClick={() => loadDrives()} className="button">Refresh</button>
+            {drives.map(drive =>
+                <Drive
+                    key={drive.name}
+                    drive={drive}
+                    setSelected={setSelected}
+                    mountRoot={mountRoot}
+                    doAction={doAction}
+                />
+            )}
         </div>
-    )
+    );
 }
 
 export default Drives
