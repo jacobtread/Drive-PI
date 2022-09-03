@@ -12,7 +12,7 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 
 type FilesResult<T> = JsonResult<T, FilesError>;
 
-#[post("/files/list")]
+#[post("/files")]
 pub async fn list(body: Json<ListRequest>) -> FilesResult<DriveList> {
     let response = get_files_at(&body.drive_path, &body.path)?;
     ok_json(response)
