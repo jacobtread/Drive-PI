@@ -1,13 +1,10 @@
 import { FunctionComponent, useEffect, useState } from "react";
 import { useAccess } from "$components/AccessProvider";
 import { DriveFile, DriveFolder, DriveItem, FilesResponse } from "$api/models";
-import HomeIcon from "$components/icons/HomeIcon";
-import BackIcon from "$components/icons/BackIcon";
-import FileIcon from "$components/icons/FileIcon";
-import FolderIcon from "$components/icons/FolderIcon";
+import { BackIcon, FileIcon, FolderIcon, HomeIcon } from "$components/Icons";
 
 interface Properties {
-    drive: DriveItem | null
+    drive: DriveItem | null;
 }
 
 interface DriveState {
