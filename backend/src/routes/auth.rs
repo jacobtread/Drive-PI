@@ -3,6 +3,7 @@ use std::time::{Duration, UNIX_EPOCH};
 use actix_web::{delete, get, HttpRequest, post, web};
 use actix_web::web::Json;
 use log::{info, warn};
+use crate::define_routes;
 
 use crate::middleware::auth::TOKEN_HEADER;
 use crate::models::auth::{AuthRequest, CheckResponse, TokenDataResponse};
@@ -10,12 +11,7 @@ use crate::models::errors::AuthError;
 use crate::stores::auth::AuthStoreData;
 use crate::utils::{JsonResult, ok_json, ok_json_empty};
 
-pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(auth)
-        .service(check_auth)
-        .service(delete_token);
-}
+define_routes!(auth, check_auth, delete_token);
 
 type AuthResult<T> = JsonResult<T, AuthError>;
 type AuthResultEmpty = AuthResult<()>;

@@ -3,14 +3,13 @@ use actix_web::body::BoxBody;
 use actix_web::http::header::ContentType;
 use mime_guess::from_path;
 use rust_embed::{EmbeddedFile, RustEmbed};
+use crate::define_routes;
 
 #[derive(RustEmbed)]
 #[folder = "public"]
 struct PublicDir;
 
-pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(public);
-}
+define_routes!(public);
 
 async fn serve_file(path: &str, file: EmbeddedFile) -> HttpResponse<BoxBody> {
     HttpResponse::Ok()

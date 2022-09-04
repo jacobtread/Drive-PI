@@ -1,17 +1,12 @@
 use actix_web::{delete, get, post, put, web};
 use actix_web::web::Json;
+use crate::define_routes;
 use crate::models::drives::{MountRequest, DrivesResponse};
 use crate::models::errors::DrivesError;
 use crate::utils::drives::{get_drive_list, mount_drive, unmount_drive, remount_drive};
 use crate::utils::{JsonResult, ok_json, ok_json_empty};
 
-pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(list)
-        .service(unmount)
-        .service(mount)
-        .service(remount);
-}
+define_routes!(list, unmount, mount, remount);
 
 type DrivesResult<T> = JsonResult<T, DrivesError>;
 type DrivesResultEmpty = DrivesResult<()>;

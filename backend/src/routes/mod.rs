@@ -24,3 +24,13 @@ pub fn auth_scope(auth_store: AuthStoreSafe) -> Scope<
     Scope::new("")
         .wrap(AuthMiddleware::new(auth_store))
 }
+
+#[macro_export]
+macro_rules! define_routes {
+    ($($route:ident),*) => {
+        pub fn init_routes(cfg: &mut web::ServiceConfig) {
+            cfg
+                $(.service($route))*;
+        }
+    };
+}
