@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { DependencyList, useEffect } from "react";
 
 export function useEffectOnce(
     action: () => void
@@ -15,7 +15,7 @@ export function useEffectOnce(
  */
 export function useEffectAsync(
     action: () => Promise<void>,
-    dependencies: any[] = []
+    dependencies: DependencyList = []
 ) {
     useEffect(() => {
         action()

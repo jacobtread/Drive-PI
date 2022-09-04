@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { ErrorResponse, RouteMethod } from "$api/request";
 import { useAccess } from "$components/AccessProvider";
 import Drive, { DriveAction } from "$components/Drive";

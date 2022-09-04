@@ -27,7 +27,7 @@ export default defineConfig({
             "$components": path.resolve(sourceDir, "components"),
             "$assets": path.resolve(sourceDir, "assets"),
             "$api": path.resolve(sourceDir, "api"),
-            "$app": sourceDir
+            "$app": path.resolve(sourceDir)
         }
     }
 })
