@@ -12,11 +12,11 @@ import LogoSide from "$assets/images/logo-side.svg"
  */
 const App: FunctionComponent = () => {
     const {token, logout} = useAccess();
+    const [selected, setSelected] = useState<DriveItem | null>(null)
+
     if (token === null) {
         return <Auth/>
     }
-
-    const [selected, setSelected] = useState<DriveItem | null>(null)
 
     return (
         <div className="home">
