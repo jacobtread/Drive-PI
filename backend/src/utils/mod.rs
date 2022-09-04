@@ -1,6 +1,5 @@
 pub mod hotspot;
 pub mod drives;
-pub mod samba;
 pub mod dnsmasq;
 pub mod files;
 
