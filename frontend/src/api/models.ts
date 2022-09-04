@@ -1,20 +1,20 @@
 // Optional type (for rust similarity value can be of type or null)
 export type Option<T> = T | null;
 
-// Structure for response (GET /auth)
+// Structure for response (GET /api/auth)
 export interface CheckResponse {
     valid: boolean; // Whether to current token is valid
     expiry_time: Option<number>; // The expiry time of the token or null if token is not valid
 }
 
-// Structure for response (POST /auth)
+// Structure for response (POST /api/auth)
 export interface AuthResponse {
     token: string; // Token string to authenticate requests with
     expiry_time: number;// The expiry time of the token in milliseconds
 }
 
 
-// Structure for response (GET /drives)
+// Structure for response (GET /api/drives)
 export interface DrivesResponse {
     drives: DriveItem[];
     mount_root: string;
@@ -34,7 +34,7 @@ export interface DriveItem {
     mode: string; // Filesystem mount mode (e.g. brw-rw----)
 }
 
-// Structure for response (POST /files)
+// Structure for response (POST /api/files)
 export interface FilesResponse {
     files: DriveFile[];
     folders: DriveFolder[];

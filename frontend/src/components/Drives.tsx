@@ -3,6 +3,7 @@ import { ErrorResponse, RouteMethod } from "$api/request";
 import { useAccess } from "$components/AccessProvider";
 import Drive, { DriveAction } from "$components/Drive";
 import { DriveItem, DrivesResponse } from "$api/models";
+import { useEffectAsync } from "$app/utils";
 
 interface Properties {
     selected: DriveItem | null;
@@ -85,9 +86,7 @@ const Drives: FunctionComponent<Properties> = (properties) => {
     }
 
     // Load drives list on initial load
-    useEffect(() => {
-        loadDrives().then()
-    }, [])
+    useEffectAsync(loadDrives)
 
     return (
         <div className="drives">

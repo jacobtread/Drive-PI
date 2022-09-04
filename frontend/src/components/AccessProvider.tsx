@@ -1,6 +1,7 @@
-import { createContext, FunctionComponent, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { createContext, FunctionComponent, PropsWithChildren, useContext, useState } from "react";
 import { request, Route, RouteMethod, Token } from "$api/request";
 import { CheckResponse } from "$api/models";
+import { useEffectAsync } from "$app/utils";
 
 const LOCAL_STORAGE_KEY: string = "drivepi_token";
 
@@ -15,7 +16,6 @@ interface AccessContextType {
 const AccessContext = createContext<AccessContextType>(null!);
 
 export const useAccess = (): AccessContextType => useContext(AccessContext);
-export const useHasAccess = (): boolean => useAccess().token != null
 
 /**
  * Provided for providing the access context to elements
@@ -28,37 +28,46 @@ export const useHasAccess = (): boolean => useAccess().token != null
  */
 export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children}) => {
 
-    const [token, setToken] = useState<Token>(localStorage.getItem(LOCAL_STORAGE_KEY));
+    const [tokenState, setTokenState] = useState<Token>(null);
 
-    useEffect(saveToken, [token]);
-    useEffect(() => {
-        checkToken().then().catch();
-    });
+    // Check token validity on initial load
+    useEffectAsync(isValidToken);
 
     /**
-     * Checks the initial token loaded from local storage
-     * to see if the token is still valid or not and will
-     * clear the token if its invalid or there was an error
+     * Validates the token loaded from local storage by retrieving its
+     * status from the backend API
      */
-    async function checkToken() {
+    async function isValidToken() {
+        const token: Token = localStorage.getItem(LOCAL_STORAGE_KEY);
         if (token == null) return;
-        try {
-            const response: CheckResponse = await wrapRequest("GET", "auth");
-            if (!response.valid) {
-                setToken(null);
-            }
-        } catch (e) {
-            setToken(null);
-        }
+        // Make a GET request to /api/auth with the token from local storage
+        return request<CheckResponse>("GET", "auth", null, token)
+            .then(response => setToken(response.valid ? token : null))
+            .catch(() => setToken(null))
     }
 
     /**
-     * Saves the token into local storage or removes from
-     * local store if the value is null
+     * Makes the current authentication token invalid on the
+     * server and then clears the token client side.
      */
-    function saveToken() {
-        if (token != null) localStorage.setItem(LOCAL_STORAGE_KEY, token);
-        else localStorage.removeItem(LOCAL_STORAGE_KEY);
+    async function logout() {
+        // Make a DELETE request to /api/auth with the token set to delete it
+        return request("DELETE", "auth", null, tokenState)
+            .catch(console.error)
+            .finally(() => setToken(null));
+    }
+
+    /**
+     * Wrapper over the set token state to add or remove
+     * the token from local storage based on whether the
+     * token value is null
+     *
+     * @param token The token or null to clear
+     */
+    function setToken(token: Token) {
+        setTokenState(token)
+        if (token != null) localStorage.setItem(LOCAL_STORAGE_KEY, token)
+        else localStorage.removeItem(LOCAL_STORAGE_KEY)
     }
 
     /**
@@ -73,23 +82,20 @@ export const AccessProvider: FunctionComponent<PropsWithChildren> = ({children})
         path: Route,
         body: any = null
     ): Promise<V> {
-        return request<V>(method, path, body, token);
+        return request<V>(method, path, body, tokenState)
+            .catch(error => {
+                // Handle not authenticated errors
+                if (error === 401) setToken(null)
+                return error;
+            });
     }
 
-    /**
-     * Clears the current authentication token and tells
-     * the server to delete the token if it exists
-     */
-    async function logout() {
-        try {
-            await wrapRequest("DELETE", "auth");
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setToken(null);
-        }
-    }
-
-    const contextValue: AccessContextType = {token, setToken, request: wrapRequest, logout};
+    // Context state to provide to children
+    const contextValue: AccessContextType = {
+        token: tokenState,
+        setToken,
+        request: wrapRequest,
+        logout
+    };
     return <AccessContext.Provider value={contextValue}>{children}</AccessContext.Provider>;
 }
