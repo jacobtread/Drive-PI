@@ -2,6 +2,10 @@
 
 # Drive-PI
 
+![License](https://img.shields.io/github/license/jacobtread/Drive-PI?style=for-the-badge)
+
+## About
+
 This application is for a school assessment of mine that requires me to create a Samba share on Raspberry PI that shares
 any USB sticks that are plugged into it.
 Which should then be accessible through the wireless hotspot that the Raspberry PI will start.
@@ -15,6 +19,10 @@ This allows the service to be accessed from the hotspot using the url http://dri
 share will be located at
 \\drivepi.local\drivepi
 
+## Repo Structure
+
+This Repository is a monorepo for both the backend and frontend of the app. The **frontend** directory contains the React frontend and the **backend** directory contains the Rust backend server
+
 ## Environment Variables
 
 | Variable                  | Default       | Description                                    |
@@ -27,3 +35,8 @@ share will be located at
 | DRIVEPI_HOTSPOT_PASSWORD  | Drive-PI      | The Password for accessing the hotspot         |
 | RUST_LOG                  | drivepi=info  | Logging crate configuration                    |
 | RUST_LOG_STYLE            | always        | Whether to enable colored logging output       |
+
+## Screenshots
+
+![Auth Screenshot](assets/screenshots/auth.png)
+![Main Screenshot](assets/screenshots/main.png)
