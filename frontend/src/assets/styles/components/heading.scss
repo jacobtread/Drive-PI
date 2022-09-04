@@ -32,3 +32,17 @@
   border-bottom: none;
   width: 100%;
 }
+
+@media all and (max-width: 360px) {
+  .heading__title {
+    display: none;
+  }
+
+  .heading__logo {
+    max-height: 64px;
+  }
+
+  .heading {
+    flex-flow: column;
+  }
+}

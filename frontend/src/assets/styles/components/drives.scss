@@ -23,6 +23,7 @@
   border-left: 3px solid #444;
   transition: all 0.25s linear;
   opacity: 0.7;
+  overflow: hidden;
 }
 
 .drive:hover {
@@ -59,6 +60,11 @@
 .drive__mount {
   color: #777;
   font-size: 0.8rem;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .drive__actions {
@@ -95,4 +101,27 @@
 
 .drive__message__text {
   color: #FFF;
+}
+
+@media all and (max-width: 1000px) {
+  .drives {
+    max-width: 100%;
+    padding: 1rem;
+  }
+  .drive__actions__view {
+    display: none;
+  }
+}
+
+@media all and (max-width: 600px) {
+
+  .drive {
+    display: flex;
+    flex-flow: column;
+    align-items: flex-start;
+  }
+
+  .drive__mount {
+    max-width: 70vw;
+  }
 }

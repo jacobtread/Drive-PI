@@ -94,3 +94,15 @@
 .browser__item:hover .browser__item__name {
   color: $primary;
 }
+
+
+@media all and (max-width: 1000px) {
+  .browser {
+    display: none;
+  }
+
+  .browser-error {
+    display: none;
+  }
+}
+

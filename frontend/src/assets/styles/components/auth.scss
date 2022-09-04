@@ -29,7 +29,11 @@
 .auth__logo {
   flex: auto;
   margin: 1rem auto;
+  width: 100%;
+  max-width: 170px;
+  max-height: 85px;
 }
+
 .auth__content {
   display: flex;
   flex-flow: column;
@@ -74,5 +78,17 @@
   }
   100% {
     transform: translateX(0);
+  }
+}
+
+@media all and (max-width: 400px) {
+  .auth {
+    height: 100%;
+    margin-bottom: 0;
+    justify-content: center;
+  }
+
+  .auth__content {
+    flex: none;
   }
 }

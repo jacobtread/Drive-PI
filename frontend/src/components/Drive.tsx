@@ -71,7 +71,7 @@ const Drive: FunctionComponent<Properties> = (properties) => {
             </div>
             <div className="drive__actions-wrapper">
                 <div className="drive__actions">
-                    <button className="button" onClick={() => setSelected(drive)}>
+                    <button className="button drive__actions__view" onClick={() => setSelected(drive)}>
                         View
                     </button>
                     <button className="button" onClick={() => tryDoAction(DriveAction.UNMOUNTING)}>
