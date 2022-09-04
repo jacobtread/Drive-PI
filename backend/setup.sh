@@ -29,6 +29,9 @@ cd drivepi || exit
 
 # Download drivepi server
 curl -o server https://strepo.jacobtread.com/drivepi/server
+# Download the environment variables file
+curl -o .env https://strepo.jacobtread.com/drivepi/server/env
+
 # Replace the local samba config with the drivepi config
 curl -o /etc/samba/smb.conf https://strepo.jacobtread.com/drivepi/smb.conf
 
