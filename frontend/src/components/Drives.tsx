@@ -73,7 +73,6 @@ const Drives: FunctionComponent<Properties> = (properties) => {
             setSelected(null)
         }
         const actionMethods: Record<DriveAction, RouteMethod> = {
-            [DriveAction.SHARING]: "PUT",
             [DriveAction.MOUNTING]: "POST",
             [DriveAction.UNMOUNTING]: "DELETE"
         };

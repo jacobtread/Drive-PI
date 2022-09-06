@@ -176,9 +176,3 @@ pub fn unmount_drive(path: &String, name: &String) -> DrivesResultEmpty {
         Ok(())
     }
 }
-
-/// Unmounts and then remounts drive
-pub fn remount_drive(path: &String, name: &String) -> DrivesResultEmpty {
-    unmount_drive(path, name)?;
-    mount_drive(path, name)
-}

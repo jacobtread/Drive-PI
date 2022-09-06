@@ -8,8 +8,7 @@ import { DriveItem } from "$api/models";
 // after an action is triggered on it. Mapped to their http method
 export enum DriveAction {
     UNMOUNTING = "Unmounting",
-    MOUNTING = "Mounting",
-    SHARING = "Sharing"
+    MOUNTING = "Mounting"
 }
 
 interface Properties {
@@ -91,7 +90,10 @@ const Drive: FunctionComponent<Properties> = (properties) => {
             </div>
             <div className="drive__actions-wrapper">
                 <div className="drive__actions">
-                    <button className="button" onClick={() => tryDoAction(DriveAction.SHARING)}>
+                    <button className="button" onClick={
+                        () => tryDoAction(DriveAction.UNMOUNTING)
+                            .then(() => tryDoAction(DriveAction.MOUNTING))
+                    }>
                         Share
                     </button>
                 </div>
