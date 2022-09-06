@@ -19,6 +19,11 @@ systemctl enable NetworkManager
 # Stop dnsmasq network manager starts it for us
 systemctl stop dnsmasq
 
+# Append hosts file entry
+echo -e "\n\n127.0.0.1 drivepi.local" >> /etc/hosts
+# Setup dnsmasq config
+echo "address=/.local/10.42.0.1" > /etc/NetworkManager/dnsmasq-shared.d/hosts.conf
+
 # Allow samba through the firewall
 sudo ufw allow samba
 
