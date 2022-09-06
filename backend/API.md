@@ -174,29 +174,6 @@ Path being the drive path and name being the name of the folder to mount the dri
 Successful unmount is indicated with a 200 status code failures will be present in
 the message.
 
-### Remount
-
-To remount a drive thats mounted outside the Drive-PI mount root you can use this route. The drive will be mounted to the Drive-PI share mount root
-using the mount command.
-
-**PUT** /api/drives
-
-> Requires X-Token header
-
-### Request Body
-
-Path being the drive path and name being the name of the folder to mount the drive to.
-
-```json
-{
-    "path": "/dev/sda1",
-    "name": "USB Drive"    
-}
-```
-
-Successful remount is indicated with a 200 status code failures will be present in
-the message.
-
 ## Files Routes
 
 You can list the files and folders on a drive using this route.
