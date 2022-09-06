@@ -1,6 +1,5 @@
 pub mod hotspot;
 pub mod drives;
-pub mod dnsmasq;
 pub mod files;
 
 use actix_web::web::Json;
