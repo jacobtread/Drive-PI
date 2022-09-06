@@ -1,5 +1,5 @@
 use std::{fs, io};
-use std::fs::remove_dir;
+use std::fs::{create_dir, remove_dir};
 use std::path::{Path, PathBuf};
 use serde_with::{serde_as, VecSkipError};
 use serde::Deserialize;
@@ -37,7 +37,10 @@ pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
             "-o", LSBLK_OUTPUT_CONTENTS /* Output contents list*/
         ])
         .output()
-        .map_err(|_| DrivesError::IOError)?
+        .map_err(|err| {
+            error!("Failed to execute lsblk command: {}", err);
+            DrivesError::IOError
+        })?
         .stdout;
     let devices = serde_json::from_slice::<LSBLKOutput>(&output)
         .map_err(|err| {
@@ -56,7 +59,7 @@ pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
             for drive in children {
                 if let Some(mount) = &drive.mount {
                     // Exclude system parts
-                    if mount == "/" || mount == "/boot/firmware" {
+                    if mount == "/" || mount.starts_with("/boot") {
                         continue;
                     }
                 }
@@ -76,7 +79,11 @@ pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
 }
 
 pub fn get_mount_root() -> io::Result<PathBuf> {
-    Path::new(MOUNT_DIR).canonicalize()
+    let mount_path = Path::new(MOUNT_DIR);
+    if !mount_path.exists() {
+        create_dir(mount_path)?;
+    }
+    mount_path.canonicalize()
 }
 
 /// Handles mounting drives to local paths relative to the executable
