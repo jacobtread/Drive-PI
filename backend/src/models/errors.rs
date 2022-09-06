@@ -57,6 +57,8 @@ pub enum DrivesError {
 
 #[derive(Debug, Display, Error)]
 pub enum FilesError {
+    #[display(fmt = "path outside mount root")]
+    OutsideMountRoot,
     #[display(fmt = "path was not a directory")]
     NotDirectory,
     #[display(fmt = "io error")]
@@ -139,7 +141,7 @@ impl ResponseError for FilesError {
     fn status_code(&self) -> StatusCode {
         match self {
             FilesError::IOError => StatusCode::INTERNAL_SERVER_ERROR,
-            FilesError::NotDirectory => StatusCode::BAD_REQUEST
+            FilesError::NotDirectory | FilesError::OutsideMountRoot => StatusCode::BAD_REQUEST
         }
     }
 }

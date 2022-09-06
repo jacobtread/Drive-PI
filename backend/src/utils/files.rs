@@ -1,8 +1,9 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::os::unix::fs::PermissionsExt;
 
 use crate::models::errors::FilesError;
 use crate::models::files::{DriveFile, DriveFolder, DriveList};
+use crate::utils::drives::get_mount_root;
 
 type FilesResult<T> = Result<T, FilesError>;
 
@@ -12,12 +13,18 @@ pub fn get_files_at(
     drive_path: &String,
     path: &String,
 ) -> FilesResult<DriveList> {
-    // TODO: Check full_path is inside mounted dir
+    let mount_root = get_mount_root()?;
 
-    let mut full_path = PathBuf::with_capacity(2);
-    full_path.push(drive_path);
-    full_path.push(path);
+    let full_path = Path::new(drive_path)
+        .join(path)
+        .canonicalize()?;
 
+    // Ensure the directory is within the mount root directory
+    if !full_path.starts_with(mount_root) {
+        return Err(FilesError::OutsideMountRoot)
+    }
+
+    // Ensure the path is actually a directory and not a file
     if !full_path.is_dir() {
         return Err(FilesError::NotDirectory);
     }
