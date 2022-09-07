@@ -133,10 +133,37 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResultEmpty {
             .unwrap_or(String::from("Failed to parse stderr"));
 
         warn!("Failed to mount drive {}", stderr);
+
         Err(DrivesError::MountError)
     } else {
+        chown_mounted_drive(mount_path_str)?;
+
         Ok(())
     }
+}
+ fn chown_mounted_drive(path: &str) -> DrivesResultEmpty  {
+     let output = Command::new("chmod")
+         .args([
+             "a+rw", /* Read/Write*/
+             path
+         ])
+         .output()
+         .map_err(|err| {
+             error!("Failed to execute chmod command: {}", err);
+             DrivesError::IOError
+         })?;
+
+     let status = output.status;
+
+     if !status.success() {
+         let stderr = String::from_utf8(output.stderr)
+             .unwrap_or(String::from("Failed to parse stderr"));
+
+         warn!("Failed to change mounted drive permissions {}", stderr);
+         Err(DrivesError::MountError)
+     } else {
+         Ok(())
+     }
 }
 
 /// Unmounts the provided drive and removes it from the samba share
