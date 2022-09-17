@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Display, Formatter, Write};
 use std::io;
 use std::io::Error;
 
@@ -6,73 +7,115 @@ use std::time::SystemTimeError;
 use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
-use derive_more::{Display, Error};
+use derive_more::{Error};
 
 /// Generic enum error type for comm errors
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum GenericError {
-    #[display(fmt = "internal server error")]
     ServerError
+}
+
+impl Display for GenericError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GenericError::ServerError => f.write_str("internal server error")
+        }
+    }
 }
 
 /// Error type for authentication errors like missing
 /// tokens or invalid credentials. Allows generic errors
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum AuthError {
-    #[display(fmt = "invalid credentials")]
     InvalidCredentials,
-    #[display(fmt = "missing token")]
     MissingToken,
-    #[display(fmt = "invalid token")]
     InvalidToken,
-    #[display(fmt = "{}", .0)]
     GenericError(GenericError),
+}
+
+impl Display for AuthError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AuthError::InvalidCredentials => f.write_str("invalid credentials"),
+            AuthError::MissingToken => f.write_str("missing token"),
+            AuthError::InvalidToken => f.write_str("invalid token"),
+            AuthError::GenericError(err) => err.fmt(f)
+        }
+    }
 }
 
 /// Error type for errors that occurred on the
 /// auth store.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum AuthStoreError {
-    #[display(fmt = "read failure")]
     ReadFailure,
-    #[display(fmt = "add failure")]
     AddFailure,
-    #[display(fmt = "remove failure")]
     RemoveFailure,
 }
 
-#[derive(Debug, Display, Error)]
+impl Display for AuthStoreError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AuthStoreError::ReadFailure => f.write_str("read failure"),
+            AuthStoreError::AddFailure => f.write_str("add failure"),
+            AuthStoreError::RemoveFailure => f.write_str("remove failure")
+        }
+    }
+}
+
+#[derive(Debug, Error)]
 pub enum DrivesError {
-    #[display(fmt = "parse error")]
     ParseError,
-    #[display(fmt = "unmount error")]
     UnmountError,
-    #[display(fmt = "mount error")]
     MountError,
-    #[display(fmt = "Target device is busy cannot unmount")]
     TargetBusy,
-    #[display(fmt = "io error")]
     IOError,
 }
 
-#[derive(Debug, Display, Error)]
+impl Display for DrivesError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DrivesError::ParseError => f.write_str("parse error"),
+            DrivesError::UnmountError => f.write_str("unmount error"),
+            DrivesError::MountError => f.write_str("mount error"),
+            DrivesError::TargetBusy => f.write_str("Target is busy cannot unmount"),
+            DrivesError::IOError => f.write_str("io error")
+        }
+    }
+}
+
+#[derive(Debug, Error)]
 pub enum FilesError {
-    #[display(fmt = "path outside mount root")]
     OutsideMountRoot,
-    #[display(fmt = "path was not a directory")]
     NotDirectory,
-    #[display(fmt = "io error")]
     IOError,
 }
 
-#[derive(Debug, Display, Error)]
+impl Display for FilesError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FilesError::OutsideMountRoot => f.write_str("path outside mount root"),
+            FilesError::NotDirectory => f.write_str("path was not a directory"),
+            FilesError::IOError => f.write_str("io error")
+        }
+    }
+}
+
+#[derive(Debug, Error)]
 pub enum HotspotError {
-    #[display(fmt = "failed to activate hotspot")]
     NotActivated,
-    #[display(fmt = "failed to execute hotspot command")]
     CommandError,
-    #[display(fmt = "failed to parse output from hotspot command")]
     CommandOutputError,
+}
+
+impl Display for HotspotError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HotspotError::NotActivated => f.write_str("failed to activate hotspot"),
+            HotspotError::CommandError => f.write_str("failed to execute hotspot command"),
+            HotspotError::CommandOutputError => f.write_str("failed to parse output from hotspot command")
+        }
+    }
 }
 
 impl From<io::Error> for FilesError {
