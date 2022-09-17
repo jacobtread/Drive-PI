@@ -1,7 +1,7 @@
-use std::env;
-use std::process::{Command, exit};
-use log::{error, info};
 use crate::models::errors::HotspotError;
+use log::{error, info};
+use std::env;
+use std::process::{exit, Command};
 
 // Default setting constants
 const DEFAULT_HOTSPOT_INTERFACE: &str = "wlan0";
@@ -15,12 +15,11 @@ const ENV_HOTSPOT_PASSWORD: &str = "DRIVEPI_HOTSPOT_PASSWORD";
 
 pub fn start_hotspot() -> Result<(), HotspotError> {
     // Settings loaded through environment variables with defaults
-    let interface = env::var(ENV_HOTSPOT_INTERFACE)
-        .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_INTERFACE));
-    let ssid = env::var(ENV_HOTSPOT_SSID)
-        .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_SSID));
-    let password = env::var(ENV_HOTSPOT_PASSWORD)
-        .unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_PASSWORD));
+    let interface =
+        env::var(ENV_HOTSPOT_INTERFACE).unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_INTERFACE));
+    let ssid = env::var(ENV_HOTSPOT_SSID).unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_SSID));
+    let password =
+        env::var(ENV_HOTSPOT_PASSWORD).unwrap_or_else(|_| String::from(DEFAULT_HOTSPOT_PASSWORD));
 
     // Ensure the password is long enough
     if password.len() < 8 {
@@ -32,10 +31,15 @@ pub fn start_hotspot() -> Result<(), HotspotError> {
     // Create the hotspot using the nmcli (network-manager cli) tool
     let output = Command::new("nmcli")
         .args([
-            "device", "wifi", "hotspot",
-            "ifname", interface.as_ref(),
-            "ssid", ssid.clone().as_ref(),
-            "password", password.clone().as_ref()
+            "device",
+            "wifi",
+            "hotspot",
+            "ifname",
+            interface.as_ref(),
+            "ssid",
+            ssid.clone().as_ref(),
+            "password",
+            password.clone().as_ref(),
         ])
         .output()
         .map_err(|err| {
@@ -44,11 +48,10 @@ pub fn start_hotspot() -> Result<(), HotspotError> {
         })?;
 
     // Parse the stdout as a string
-    let output = String::from_utf8(output.stdout)
-        .map_err(|err| {
-            error!("Failed to parse nmcli output: {}", err);
-            HotspotError::CommandOutputError
-        })?;
+    let output = String::from_utf8(output.stdout).map_err(|err| {
+        error!("Failed to parse nmcli output: {}", err);
+        HotspotError::CommandOutputError
+    })?;
 
     // Fail if the message doesn't say success
     if !output.contains("successfully activated") {

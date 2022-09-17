@@ -1,10 +1,10 @@
-use std::future::{Ready, ready};
-use std::rc::Rc;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use futures::future::LocalBoxFuture;
 use futures::FutureExt;
+use std::future::{ready, Ready};
+use std::rc::Rc;
 
-use crate::models::errors::{AuthError, server_error};
+use crate::models::errors::{server_error, AuthError};
 use crate::stores::auth::AuthStoreSafe;
 
 pub const TOKEN_HEADER: &str = "X-Token";
@@ -17,14 +17,16 @@ pub struct AuthMiddleware {
 
 impl AuthMiddleware {
     // Constructor function for creating a new middleware
-    pub fn new(auth_store: AuthStoreSafe) -> Self { Self { auth_store } }
+    pub fn new(auth_store: AuthStoreSafe) -> Self {
+        Self { auth_store }
+    }
 }
 
 impl<S, B> Transform<S, ServiceRequest> for AuthMiddleware
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=actix_web::Error> + 'static,
-        S::Future: 'static,
-        B: 'static,
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error> + 'static,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<B>;
     type Error = S::Error;
@@ -48,10 +50,10 @@ pub struct AuthMiddlewareInner<S> {
 }
 
 impl<S, B> Service<ServiceRequest> for AuthMiddlewareInner<S>
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=actix_web::Error> + 'static,
-        S::Future: 'static,
-        B: 'static,
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error> + 'static,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<B>;
     type Error = S::Error;
@@ -65,22 +67,19 @@ impl<S, B> Service<ServiceRequest> for AuthMiddlewareInner<S>
 
         async move {
             let headers = req.headers();
-            let token_header = headers.get(TOKEN_HEADER)
-                .ok_or(AuthError::MissingToken)?;
+            let token_header = headers.get(TOKEN_HEADER).ok_or(AuthError::MissingToken)?;
 
-            let token = token_header.to_str()
-                .map_err(server_error)?;
+            let token = token_header.to_str().map_err(server_error)?;
 
-            let mut auth_store = auth_store.lock()
-                .map_err(server_error)?;
+            let mut auth_store = auth_store.lock().map_err(server_error)?;
 
-            let is_valid = auth_store.check_token(token)
-                .map_err(server_error)?;
+            let is_valid = auth_store.check_token(token).map_err(server_error)?;
             if is_valid {
                 service.call(req).await
             } else {
                 Err(AuthError::InvalidToken.into())
             }
-        }.boxed_local()
+        }
+        .boxed_local()
     }
 }

@@ -1,6 +1,6 @@
 use actix_cors::Cors;
+use actix_web::web::{scope, Data};
 use actix_web::{App, HttpServer};
-use actix_web::web::{Data, scope};
 use dotenv::dotenv;
 use log::{error, info};
 
@@ -12,16 +12,14 @@ use crate::utils::hotspot::start_hotspot;
 
 mod routes;
 
-pub mod utils;
-pub mod stores;
 pub mod middleware;
 pub mod models;
-
+pub mod stores;
+pub mod utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv()
-        .ok();
+    dotenv().ok();
     env_logger::init();
 
     info!("Loaded environment variables");
@@ -50,18 +48,14 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(auth_store_data)
             .service(
-                scope("/api")
-                    .configure(routes::auth::init_routes)
-                    .service(
-                        auth_scope(auth_store.clone())
-                            .configure(routes::drives::init_routes)
-                            .configure(routes::files::init_routes)
-                    )
+                scope("/api").configure(routes::auth::init_routes).service(
+                    auth_scope(auth_store.clone())
+                        .configure(routes::drives::init_routes)
+                        .configure(routes::files::init_routes),
+                ),
             )
             .configure(routes::app::init_routes)
     });
 
-    server.bind(("0.0.0.0", port))?
-        .run()
-        .await
+    server.bind(("0.0.0.0", port))?.run().await
 }

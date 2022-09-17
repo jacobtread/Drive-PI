@@ -15,7 +15,6 @@ const DEFAULT_PASSWORD: &str = "admin";
 const ENV_USERNAME_KEY: &str = "DRIVEPI_USERNAME";
 const ENV_PASSWORD_KEY: &str = "DRIVEPI_PASSWORD";
 
-
 /// The time it takes for an access token to expire in
 /// seconds. (In this case 5 Hours)
 const TOKEN_EXPIRY_TIME: u64 = 60 * 60 * 5;
@@ -48,11 +47,9 @@ impl AuthStore {
     /// Creates a new instance of the auth store using the
     /// provided username and password as the credentials.
     pub fn create() -> AuthStoreSafe {
-        let username = std::env::var(ENV_USERNAME_KEY)
-            .unwrap_or(String::from(DEFAULT_USERNAME));
+        let username = std::env::var(ENV_USERNAME_KEY).unwrap_or(String::from(DEFAULT_USERNAME));
 
-        let password = std::env::var(ENV_PASSWORD_KEY)
-            .unwrap_or(String::from(DEFAULT_PASSWORD));
+        let password = std::env::var(ENV_PASSWORD_KEY).unwrap_or(String::from(DEFAULT_PASSWORD));
 
         Arc::new(Mutex::new(Self {
             username,
@@ -61,37 +58,29 @@ impl AuthStore {
         }))
     }
 
-
     /// Checks whether the provided username and password
     /// match the credentials stored in the store
-    pub fn is_credentials(
-        &self,
-        username: &String,
-        password: &String,
-    ) -> bool {
-        self.username == *username
-            && self.password == *password
+    pub fn is_credentials(&self, username: &String, password: &String) -> bool {
+        self.username == *username && self.password == *password
     }
 
     /// Retrieves the expiry time for the provided token
-    pub fn get_token_expiry(
-        &self,
-        token: &str,
-    ) -> AuthResult<Option<SystemTime>> {
-        let tokens = self.tokens.read()
-            .map_err(|_|AuthStoreError::ReadFailure)?;
+    pub fn get_token_expiry(&self, token: &str) -> AuthResult<Option<SystemTime>> {
+        let tokens = self
+            .tokens
+            .read()
+            .map_err(|_| AuthStoreError::ReadFailure)?;
         match tokens.get(token) {
             None => Ok(None),
-            Some(expiry_time) => Ok(Some(expiry_time.clone()))
+            Some(expiry_time) => Ok(Some(expiry_time.clone())),
         }
     }
 
     /// Removes the provided token from the valid tokens map
-    pub fn remove_token(
-        &mut self,
-        token: &str,
-    ) -> AuthResult<()> {
-        let mut tokens = self.tokens.write()
+    pub fn remove_token(&mut self, token: &str) -> AuthResult<()> {
+        let mut tokens = self
+            .tokens
+            .write()
             .map_err(|_| AuthStoreError::RemoveFailure)?;
         tokens.remove(token);
         Ok(())
@@ -99,12 +88,10 @@ impl AuthStore {
 
     /// Adds the provided token into the tokens map with its
     /// provided expiry time.
-    fn add_token(
-        &mut self,
-        token: String,
-        expiry_time: SystemTime,
-    ) -> AuthResult<()> {
-        let mut tokens = self.tokens.write()
+    fn add_token(&mut self, token: String, expiry_time: SystemTime) -> AuthResult<()> {
+        let mut tokens = self
+            .tokens
+            .write()
             .map_err(|_| AuthStoreError::AddFailure)?;
         tokens.insert(token, expiry_time);
         Ok(())
@@ -113,10 +100,7 @@ impl AuthStore {
     /// Checks whether the token exists in the tokens map and
     /// will remove the token if the token is expired returning
     /// whether the token is valid
-    pub fn check_token(
-        &mut self,
-        token: &str,
-    ) -> AuthResult<bool> {
+    pub fn check_token(&mut self, token: &str) -> AuthResult<bool> {
         let expiry_time = self.get_token_expiry(token)?;
         match expiry_time {
             Some(expiry_time) => {
@@ -129,7 +113,7 @@ impl AuthStore {
                     true
                 })
             }
-            None => Ok(false)
+            None => Ok(false),
         }
     }
 
@@ -150,15 +134,9 @@ impl AuthStore {
             let expiry_duration = Duration::from_secs(TOKEN_EXPIRY_TIME);
             let expiry_time = current_time.add(expiry_duration);
 
-            self.add_token(
-                token.clone(),
-                expiry_time.clone(),
-            )?;
+            self.add_token(token.clone(), expiry_time.clone())?;
 
-            return Ok(TokenData {
-                token,
-                expiry_time,
-            });
+            return Ok(TokenData { token, expiry_time });
         }
     }
 }

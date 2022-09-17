@@ -1,10 +1,10 @@
-use actix_web::{delete, get, post, web};
-use actix_web::web::Json;
 use crate::define_routes;
-use crate::models::drives::{MountRequest, DrivesResponse};
+use crate::models::drives::{DrivesResponse, MountRequest};
 use crate::models::errors::DrivesError;
 use crate::utils::drives::{get_drive_list, mount_drive, unmount_drive};
-use crate::utils::{JsonResult, ok_json, ok_json_empty};
+use crate::utils::{ok_json, ok_json_empty, JsonResult};
+use actix_web::web::Json;
+use actix_web::{delete, get, post, web};
 
 define_routes!(list, unmount, mount);
 

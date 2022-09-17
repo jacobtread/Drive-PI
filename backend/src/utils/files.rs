@@ -1,5 +1,5 @@
-use std::path::Path;
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 
 use crate::models::errors::FilesError;
 use crate::models::files::{DriveFile, DriveFolder, DriveList};
@@ -9,19 +9,14 @@ type FilesResult<T> = Result<T, FilesError>;
 
 /// Retrieves a list of files and folders in the provided mount
 /// path.
-pub fn get_files_at(
-    drive_path: &String,
-    path: &String,
-) -> FilesResult<DriveList> {
+pub fn get_files_at(drive_path: &String, path: &String) -> FilesResult<DriveList> {
     let mount_root = get_mount_root()?;
 
-    let full_path = Path::new(drive_path)
-        .join(path)
-        .canonicalize()?;
+    let full_path = Path::new(drive_path).join(path).canonicalize()?;
 
     // Ensure the directory is within the mount root directory
     if !full_path.starts_with(mount_root) {
-        return Err(FilesError::OutsideMountRoot)
+        return Err(FilesError::OutsideMountRoot);
     }
 
     // Ensure the path is actually a directory and not a file
@@ -35,11 +30,8 @@ pub fn get_files_at(
     for entry in full_path.read_dir()? {
         let entry = entry?;
         let metadata = entry.metadata()?;
-        let entry_name = entry.file_name()
-            .to_string_lossy()
-            .to_string();
-        let permissions = metadata.permissions()
-            .mode();
+        let entry_name = entry.file_name().to_string_lossy().to_string();
+        let permissions = metadata.permissions().mode();
 
         if metadata.is_dir() {
             folders.push(DriveFolder {
@@ -55,8 +47,5 @@ pub fn get_files_at(
         }
     }
 
-    Ok(DriveList {
-        folders,
-        files,
-    })
+    Ok(DriveList { folders, files })
 }

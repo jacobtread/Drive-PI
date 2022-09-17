@@ -1,10 +1,10 @@
-pub mod hotspot;
 pub mod drives;
 pub mod files;
+pub mod hotspot;
 
 use actix_web::web::Json;
 use log::warn;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
 const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
 const DEFAULT_PORT: u16 = 80;
@@ -31,7 +31,7 @@ pub fn create_random_string(charset: &Vec<char>, length: usize) -> String {
     for _ in 0..length {
         let char_index = rng.gen_range(0..char_count);
         match charset.get(char_index) {
-            Some(char) => { result.push(*char) }
+            Some(char) => result.push(*char),
             None => {}
         }
     }
@@ -45,7 +45,10 @@ pub fn get_env_port() -> u16 {
         if let Ok(port) = port_raw.parse::<u16>() {
             port
         } else {
-            warn!("Port provided as {} is not a valid port defaulting to {}", port_raw, DEFAULT_PORT);
+            warn!(
+                "Port provided as {} is not a valid port defaulting to {}",
+                port_raw, DEFAULT_PORT
+            );
             DEFAULT_PORT
         }
     } else {
