@@ -1,4 +1,4 @@
-use crate::models::drives::{DriveVec, DrivesResponse};
+use crate::models::drives::{Drive, DrivesResponse};
 use crate::models::errors::DrivesError;
 use log::{error, info, warn};
 use serde::Deserialize;
@@ -16,7 +16,7 @@ const LSBLK_OUTPUT_CONTENTS: &str = "UUID,NAME,LABEL,PATH,MOUNTPOINT,FSSIZE,FSUS
 pub struct BlockDevice {
     name: String,
     #[serde_as(as = "Option<VecSkipError<_>>")]
-    children: Option<DriveVec>,
+    children: Option<Vec<Drive>>,
 }
 
 #[derive(Deserialize)]
@@ -137,6 +137,7 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResultEmpty {
         Ok(())
     }
 }
+
 fn chown_mounted_drive(path: &str) -> DrivesResultEmpty {
     let output = Command::new("chmod")
         .args(["a+rw" /* Read/Write*/, path])
