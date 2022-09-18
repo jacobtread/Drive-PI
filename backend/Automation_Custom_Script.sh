@@ -27,6 +27,9 @@ echo "nameserver 8.8.8.8" | tee /etc/resolv.conf
 echo "Installing NetworkManager, Samba, and dnsmasq"
 apt-get install -y network-manager samba dnsmasq
 
+# Install dependencies required for wifi and bluetooth.
+apt-get install -y iw wireless-tools crda wpasupplicant pi-bluetooth
+
 # Enable and start network manager
 echo "Starting and enabling NetworkManager"
 systemctl start NetworkManager
@@ -173,7 +176,21 @@ mv /etc/NetworkManager/NetworkManager.conf /etc/NetworkManager/NetworkManager.ol
 echo "$network_config" | tee /etc/NetworkManager/NetworkManager.conf
 nmcli radio wifi on
 
-
-# Enable and start drivepi service
+# Enable drivepi service so that it will automatically start on startup
 systemctl enable drivepi
-systemctl start drivepi
+
+# Enable onboard wifi for DietPI and set Wifi country code
+# From (https://dietpi.com/forum/t/dietpi-automation-enable-both-wifi-and-ethernet-adapters-for-wifi-hotspot/5423/7)
+# (Otherwise the adapter wont be available for the hotspot)
+/boot/dietpi/func/dietpi-set_hardware wifimodules onboard_enable
+/boot/dietpi/func/dietpi-set_hardware wifimodules enable
+# Set WiFi country code
+/boot/dietpi/func/dietpi-set_hardware wificountrycode "$(sed -n '/^[[:blank:]]*AUTO_SETUP_NET_WIFI_COUNTRY_CODE=/{s/^[^=]*=//p;q}' /boot/dietpi.txt)"
+
+# Enable bluetooth
+/boot/dietpi/func/dietpi-set_hardware bluetooth enable
+
+# Force the script to sleep until the install is complete then reboot
+(while [ "$(</boot/dietpi/.install_stage)" != 2 ]; do sleep 1; done; /usr/sbin/reboot) > /dev/null 2>&1 &
+
+
