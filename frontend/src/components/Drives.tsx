@@ -89,7 +89,7 @@ const Drives: FunctionComponent<Properties> = (properties) => {
 
     return (
         <div className="drives">
-            <button onClick={() => loadDrives()} className="button">Refresh</button>
+            <button onClick={() => loadDrives()} className="button button--refresh">Refresh</button>
             {drives.map(drive =>
                 <Drive
                     key={drive.name}
