@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_web::web::{scope, Data};
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
-use log::{error, info};
+use log::info;
 
 use stores::auth::AuthStore;
 
