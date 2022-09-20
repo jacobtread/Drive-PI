@@ -8,7 +8,6 @@ use stores::auth::AuthStore;
 
 use crate::routes::auth_scope;
 use crate::utils::get_env_port;
-use crate::utils::hotspot::start_hotspot;
 
 mod routes;
 
@@ -33,12 +32,6 @@ async fn main() -> std::io::Result<()> {
         info!("you can access it through http://drivepi.local");
     } else {
         info!("you can access it through http://drivepi.local:{}", port);
-    }
-
-    // Start hotspot
-    let hotspot_result = start_hotspot();
-    if let Err(err) = hotspot_result {
-        error!("Failed to start hotspot: {}", err)
     }
 
     let server = HttpServer::new(move || {

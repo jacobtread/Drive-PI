@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup Script for Drive-PI
+# Automatic Post Networking Setup Script for Drive-PI on DietPI
 # Sourced: https://strepo.jacobtread.com/drivepi/boot.sh
 
 # Update Repositories and install upgrades
@@ -13,7 +13,7 @@ apt-get upgrade -y
 echo "Disabling systemd-resolved"
 systemctl disable systemd-resolved
 echo "Stopping systemd-resolved"
-systemstl stop systemd-resolved
+systemctl stop systemd-resolved
 
 # Delete dns resolver config
 echo "Move old resolver configs"
@@ -26,6 +26,9 @@ echo "nameserver 8.8.8.8" | tee /etc/resolv.conf
 # Install NetworkManager, Samba, and dnsmasq
 echo "Installing NetworkManager, Samba, and dnsmasq"
 apt-get install -y network-manager samba dnsmasq
+
+# Install dependencies required for wifi and bluetooth.
+apt-get install -y iw wireless-tools crda wpasupplicant pi-bluetooth
 
 # Enable and start network manager
 echo "Starting and enabling NetworkManager"
@@ -57,22 +60,20 @@ echo "Allow samba through firewall"
 ufw allow samba
 
 # Variables
-repo="https://strepo.jacobtread.com/drivepi/"
 path=/bin/drivepi
 
 # Create server directory
 mkdir "$path"
 
 echo "Downloading server executable"
-# Download server executable
-curl -o $path/server $repo/server
+# Download server executable from latest github release
+curl -L -o $path/server http://github.com/Jacobtread/Drive-PI/releases/latest/download/drivepi
 
 # Make server file executable
 chmod +x $path/server
 
 # Environment variables for env file
-env_data="
-# Management Credentials
+env_data="# Management Credentials
 DRIVEPI_USERNAME=admin
 DRIVEPI_PASSWORD=admin
 
@@ -93,9 +94,22 @@ echo "Writing .env file"
 # Write environment .env file
 echo "$env_data" | tee $path/.env
 
+
+# Service startup script
+start_data="#!/bin/bash
+nmcli radio wifi on
+# Move to drivepi directory
+cd /bin/drivepi || exit
+# Start the server
+sudo ./server
+"
+
+# Write startup script
+echo "$start_data" | tee $path/start.sh
+chmod +x $path/start.sh
+
 # Samba configuration
-samba_config="
-[global]
+samba_config="[global]
    workgroup = WORKGROUP
    server string = %h server (Samba, Ubuntu)
    log file = /var/log/samba/log.%m
@@ -126,8 +140,7 @@ mv /etc/samba/smb.conf /etc/samba/smb.old.conf
 echo "$samba_config" | tee /etc/samba/smb.conf
 
 # Service contents
-service_data="
-[Unit]
+service_data="[Unit]
 Description=Drive-PI startup service
 Requires=network.target
 After=NetworkManager.service
@@ -145,27 +158,13 @@ echo "Creating daemon service"
 # Write service file
 echo "$service_data" | tee /etc/systemd/system/drivepi.service
 
-# Service startup script
-start_data="
-#!/bin/bash
-nmcli radio wifi on
-# Move to drivepi directory
-cd /bin/drivepi || exit
-# Start the server
-sudo ./server
-"
-
-# Write startup script
-echo "$start_data" | tee $path/start.sh
-
 # Wlan Fix script fixes according to: https://gist.github.com/jjsanderson/ab2407ab5fd07feb2bc5e681b14a537a
 # Copy old config
 cp /etc/dhcpcd.conf /etc/dhcpcd.old.conf
 # Tell dhcpcd to ignore wlan0
-echo \"denyinterfaces wlan0\" | tee -a /etc/dhcpcd.conf
+echo "denyinterfaces wlan0" | tee -a /etc/dhcpcd.conf
 
-network_config="
-[main]
+network_config="[main]
 plugins=ifupdown,keyfile
 dhcp=internal
 
@@ -177,9 +176,21 @@ mv /etc/NetworkManager/NetworkManager.conf /etc/NetworkManager/NetworkManager.ol
 echo "$network_config" | tee /etc/NetworkManager/NetworkManager.conf
 nmcli radio wifi on
 
-
-# Enable and start drivepi service
+# Enable drivepi service so that it will automatically start on startup
 systemctl enable drivepi
-systemctl start drivepi
 
-reboot
+# Enable onboard wifi for DietPI and set Wifi country code
+# From (https://dietpi.com/forum/t/dietpi-automation-enable-both-wifi-and-ethernet-adapters-for-wifi-hotspot/5423/7)
+# (Otherwise the adapter wont be available for the hotspot)
+/boot/dietpi/func/dietpi-set_hardware wifimodules onboard_enable
+/boot/dietpi/func/dietpi-set_hardware wifimodules enable
+# Set WiFi country code
+/boot/dietpi/func/dietpi-set_hardware wificountrycode "$(sed -n '/^[[:blank:]]*AUTO_SETUP_NET_WIFI_COUNTRY_CODE=/{s/^[^=]*=//p;q}' /boot/dietpi.txt)"
+
+# Enable bluetooth
+/boot/dietpi/func/dietpi-set_hardware bluetooth enable
+
+# Force the script to sleep until the install is complete then reboot
+(while [ "$(</boot/dietpi/.install_stage)" != 2 ]; do sleep 1; done; /usr/sbin/reboot) > /dev/null 2>&1 &
+
+

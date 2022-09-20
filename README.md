@@ -30,9 +30,6 @@ This Repository is a monorepo for both the backend and frontend of the app. The 
 | DRIVEPI_USERNAME          | admin         | The username to access the web panel           |
 | DRIVEPI_PASSWORD          | admin         | The password to access the web panel           |
 | DRIVEPI_PORT              | 80            | The port to host the HTTP server on            |
-| DRIVEPI_HOTSPOT_INTERFACE | wlan0         | The wireless interface to start the hotspot on |
-| DRIVEPI_HOTSPOT_SSID      | Drive-PI      | The SSID / Name of the Hotspot                 |
-| DRIVEPI_HOTSPOT_PASSWORD  | Drive-PI      | The Password for accessing the hotspot         |
 | RUST_LOG                  | drivepi=info  | Logging crate configuration                    |
 | RUST_LOG_STYLE            | always        | Whether to enable colored logging output       |
 

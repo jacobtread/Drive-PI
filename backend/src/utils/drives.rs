@@ -31,25 +31,22 @@ type DrivesResultEmpty = DrivesResult<()>;
 /// Retrieves a list of mounted and unmounted drives using the lsblk command
 /// and returns the result.
 pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
-    let output = Command::new("lsblk")
-        .args([
-            "-J", /* Output result as JSON */
-            "-o",
-            LSBLK_OUTPUT_CONTENTS, /* Output contents list*/
-        ])
-        .output()
-        .map_err(|err| {
-            error!("Failed to execute lsblk command: {}", err);
-            DrivesError::IOError
-        })?
-        .stdout;
-    let devices = serde_json::from_slice::<LSBLKOutput>(&output)
-        .map_err(|err| {
-            error!("Failed to parse lsblk output: {}", err);
-            DrivesError::ParseError
-        })?
-        .devices;
-
+    let mut command = Command::new("lsblk");
+    command.args([
+        "-J", /* Output the results as JSON */
+        "-o",
+        LSBLK_OUTPUT_CONTENTS, /* List of columns to add to output */
+    ]);
+    let output = command.output().map_err(|err| {
+        error!("Failed to execute lsblk command: {}", err);
+        DrivesError::IOError
+    })?;
+    let stdout = output.stdout;
+    let parsed = serde_json::from_slice::<LSBLKOutput>(&stdout).map_err(|err| {
+        error!("Failed to parse lsblk output: {}", err);
+        DrivesError::ParseError
+    })?;
+    let devices = parsed.devices;
     let mut drives = Vec::new();
     for device in devices {
         if device.name.starts_with("loop") {
@@ -69,12 +66,9 @@ pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
         }
     }
     let mount_dir = get_mount_root()?;
-    let mount_path = mount_dir.to_str().ok_or_else(|| DrivesError::IOError)?;
+    let mount_root = mount_dir.to_string_lossy().to_string();
 
-    return Ok(DrivesResponse {
-        drives,
-        mount_root: mount_path.to_string(),
-    });
+    return Ok(DrivesResponse { drives, mount_root });
 }
 
 pub fn get_mount_root() -> io::Result<PathBuf> {

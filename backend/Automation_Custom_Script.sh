@@ -1,89 +1,69 @@
-#!/bin/bash
-# Automatic Post Networking Setup Script for Drive-PI on DietPI
-# Sourced: https://strepo.jacobtread.com/drivepi/boot.sh
 
-# Update Repositories and install upgrades
-echo "Updating Repositories"
+echo "Updating..."
+# Update repositories
 apt-get update
-
-echo "Installing Updates"
+# Install upgrades without prompting for user input
 apt-get upgrade -y
 
-# systemd-resolve conflicts with dnsmasq so it must be disabled
-echo "Disabling systemd-resolved"
+
+# Disable systemd-resolve as it tries to bind the same
+# port as dnsmasq which causes issues
+echo "Disabling systemd-resolved..."
 systemctl disable systemd-resolved
-echo "Stopping systemd-resolved"
 systemctl stop systemd-resolved
 
-# Delete dns resolver config
-echo "Move old resolver configs"
-mv /etc/resolv.conf /etc/resolv.old.conf
+# Install samba and dnsmasq
+apt-get install -y samba dnsmasq
 
-# Write new dns resolver config
-echo "Writing new resolver config"
-echo "nameserver 8.8.8.8" | tee /etc/resolv.conf
+# dnsmasq configuration this tells clients that queries for
+# the domain drivepi.local should resolve to 192.168.42.1
+# which is the router address we will set for our hotspot
+dnsmasq_config_lines="
 
-# Install NetworkManager, Samba, and dnsmasq
-echo "Installing NetworkManager, Samba, and dnsmasq"
-apt-get install -y network-manager samba dnsmasq
+address=/drivepi.local/192.168.42.1
+"
 
-# Install dependencies required for wifi and bluetooth.
-apt-get install -y iw wireless-tools crda wpasupplicant pi-bluetooth
+# Append the extra lines to the dnsmasq config file
+echo "$dnsmasq_config_lines" | tee -a /etc/dnsmasq.conf
 
-# Enable and start network manager
-echo "Starting and enabling NetworkManager"
-systemctl start NetworkManager
-systemctl enable NetworkManager
+# Configuration for the internal DNS server that creates a subnet
+# that will use the DNS server created by dnsmasq
+# (located at /etc/dhcp/dhcpd.conf)
+dhcpd_conf="ddns-update-style none;
+default-lease-time 600;
+max-lease-time 7200;
+authoritative;
+log-facility local7;
 
-# Stop and disable dnsmasq so it doesn't conflict with network-manager
-echo "Stopping and disabling dnsmasq"
-systemctl stop dnsmasq
-systemctl disable dnsmasq
+subnet 192.168.42.0 netmask 255.255.255.0 {
+    range 192.168.42.10 192.168.42.50;
+    option broadcast-address 192.168.42.255;
+    option routers 192.168.42.1;
+    option domain-name \"local\";
+    option domain-name-servers 192.168.42.1, 8.8.8.8;
+}
+"
 
-# Entry to add to hosts file
-hosts_entry="
+echo "$dhcpd_conf" | tee /etc/dhcp/dhcpd.conf
 
-127.0.0.1 drivepi.local"
-
-# Append drivepi.local to /etc/hosts
-echo "Writing hosts file entry"
-echo "$hosts_entry" | tee -a /etc/hosts
-
-echo "Writing dnsmasq config file"
-# Rename old config
-mv  /etc/NetworkManager/dnsmasq-shared.d/hosts.conf  /etc/NetworkManager/dnsmasq-shared.d/hosts.old.conf
-# Write dnsmasq config
-echo "address=/.local/10.42.0.1" | tee /etc/NetworkManager/dnsmasq-shared.d/hosts.conf
-
-echo "Allow samba through firewall"
-# Allow samba through firewall
-ufw allow samba
-
-# Variables
+# Path to Drive-PI install
 path=/bin/drivepi
 
-# Create server directory
+# Create Drive-PI directory to store files
 mkdir "$path"
 
+# Download Drive-PI executable from latest GitHub release
 echo "Downloading server executable"
-# Download server executable from latest github release
 curl -L -o $path/server http://github.com/Jacobtread/Drive-PI/releases/latest/download/drivepi
-
-# Make server file executable
+# Change server file permissions to make it executable
 chmod +x $path/server
 
-# Environment variables for env file
-env_data="# Management Credentials
+env_config="# Management Credentials
 DRIVEPI_USERNAME=admin
 DRIVEPI_PASSWORD=admin
 
 # Server port
 DRIVEPI_PORT=80
-
-# Hotspot details
-DRIVEPI_HOTSPOT_INTERFACE=wlan0
-DRIVEPI_HOTSPOT_SSID=Drive-PI
-DRIVEPI_HOTSPOT_PASSWORD=Drive-PI
 
 # Logging settings
 RUST_LOG=drivepi=info
@@ -92,23 +72,25 @@ RUST_LOG_STYLE=always
 
 echo "Writing .env file"
 # Write environment .env file
-echo "$env_data" | tee $path/.env
+echo "$env_config" | tee $path/.env
 
-
-# Service startup script
-start_data="#!/bin/bash
-nmcli radio wifi on
+# Source code for the start.sh script which is started
+# by the daemon service created later in this script
+start_script="#!/bin/bash
 # Move to drivepi directory
 cd /bin/drivepi || exit
 # Start the server
 sudo ./server
 "
 
-# Write startup script
-echo "$start_data" | tee $path/start.sh
+# Write startup script and make it executable
+echo "$start_script" | tee $path/start.sh
 chmod +x $path/start.sh
 
-# Samba configuration
+# Samba configuration which is just a simple configuration
+# that adds a samba stored named [storage] which shares the
+# /bin/drivepi/mount folder which is where Drive-PI mounts
+# all its drives to (stored at /etc/samba/smb.conf)
 samba_config="[global]
    workgroup = WORKGROUP
    server string = %h server (Samba, Ubuntu)
@@ -128,25 +110,28 @@ samba_config="[global]
 # Shares the mounted paths to \\drivepi.local\storage
 [storage]
    comment = DrivePI share
-   path = /bin/drivepi/mount
+   path = $path/mount
    read only = no
    browsable = yes
 "
 
 echo "Writing samba config"
-# Rename old samba config
+# Move the old samba config
 mv /etc/samba/smb.conf /etc/samba/smb.old.conf
-# Write samba config
+# Write the new samba config
 echo "$samba_config" | tee /etc/samba/smb.conf
 
-# Service contents
+# Daemon service for automatically starting the Drive-PI server
+# automatically. This is a system service and must be a system
+# service because root access is required in order to mount
+# and unmount the drives (stored at /etc/systemd/system/drivepi.service)
 service_data="[Unit]
-Description=Drive-PI startup service
+Description=Drive-PI application
 Requires=network.target
 After=NetworkManager.service
 
 [Service]
-ExecStart=/bin/drivepi/start.sh
+ExecStart=$path/start.sh
 Restart=on-failure
 EnvironmentFile=/etc/environment
 
@@ -158,39 +143,5 @@ echo "Creating daemon service"
 # Write service file
 echo "$service_data" | tee /etc/systemd/system/drivepi.service
 
-# Wlan Fix script fixes according to: https://gist.github.com/jjsanderson/ab2407ab5fd07feb2bc5e681b14a537a
-# Copy old config
-cp /etc/dhcpcd.conf /etc/dhcpcd.old.conf
-# Tell dhcpcd to ignore wlan0
-echo "denyinterfaces wlan0" | tee -a /etc/dhcpcd.conf
-
-network_config="[main]
-plugins=ifupdown,keyfile
-dhcp=internal
-
-[ifupdown]
-managed=true
-"
-
-mv /etc/NetworkManager/NetworkManager.conf /etc/NetworkManager/NetworkManager.old.conf
-echo "$network_config" | tee /etc/NetworkManager/NetworkManager.conf
-nmcli radio wifi on
-
 # Enable drivepi service so that it will automatically start on startup
 systemctl enable drivepi
-
-# Enable onboard wifi for DietPI and set Wifi country code
-# From (https://dietpi.com/forum/t/dietpi-automation-enable-both-wifi-and-ethernet-adapters-for-wifi-hotspot/5423/7)
-# (Otherwise the adapter wont be available for the hotspot)
-/boot/dietpi/func/dietpi-set_hardware wifimodules onboard_enable
-/boot/dietpi/func/dietpi-set_hardware wifimodules enable
-# Set WiFi country code
-/boot/dietpi/func/dietpi-set_hardware wificountrycode "$(sed -n '/^[[:blank:]]*AUTO_SETUP_NET_WIFI_COUNTRY_CODE=/{s/^[^=]*=//p;q}' /boot/dietpi.txt)"
-
-# Enable bluetooth
-/boot/dietpi/func/dietpi-set_hardware bluetooth enable
-
-# Force the script to sleep until the install is complete then reboot
-(while [ "$(</boot/dietpi/.install_stage)" != 2 ]; do sleep 1; done; /usr/sbin/reboot) > /dev/null 2>&1 &
-
-

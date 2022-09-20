@@ -1,6 +1,5 @@
 pub mod drives;
 pub mod files;
-pub mod hotspot;
 
 use actix_web::web::Json;
 use log::warn;
