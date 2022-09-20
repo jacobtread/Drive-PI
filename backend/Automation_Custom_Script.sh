@@ -145,3 +145,7 @@ echo "$service_data" | tee /etc/systemd/system/drivepi.service
 
 # Enable drivepi service so that it will automatically start on startup
 systemctl enable drivepi
+
+# Force the script to sleep until the install is complete then reboot
+(while [ "$(</boot/dietpi/.install_stage)" != 2 ]; do sleep 1; done; /usr/sbin/reboot) > /dev/null 2>&1 &
+
