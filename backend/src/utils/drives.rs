@@ -1,5 +1,6 @@
 use crate::models::drives::{Drive, DrivesResponse};
 use crate::models::errors::DrivesError;
+use crate::utils::status_result;
 use log::{error, info, warn};
 use serde::Deserialize;
 use serde_with::{serde_as, VecSkipError};
@@ -31,18 +32,18 @@ type DrivesResultEmpty = DrivesResult<()>;
 /// Retrieves a list of mounted and unmounted drives using the lsblk command
 /// and returns the result.
 pub fn get_drive_list() -> DrivesResult<DrivesResponse> {
-    let mut command = Command::new("lsblk");
-    command.args([
-        "-J", /* Output the results as JSON */
-        "-o",
-        LSBLK_OUTPUT_CONTENTS, /* List of columns to add to output */
-    ]);
-    let output = command.output().map_err(|err| {
-        error!("Failed to execute lsblk command: {}", err);
-        DrivesError::IOError
-    })?;
-    let stdout = output.stdout;
-    let parsed = serde_json::from_slice::<LSBLKOutput>(&stdout).map_err(|err| {
+    let output = Command::new("lsblk")
+        .args([
+            "-J",                  // Output the results as JSON
+            "-o",                  // Specify output columns
+            LSBLK_OUTPUT_CONTENTS, // List of columns to add to output
+        ])
+        .output()
+        .map_err(|err| {
+            error!("Failed to execute lsblk command: {}", err);
+            DrivesError::IOError
+        })?;
+    let parsed = serde_json::from_slice::<LSBLKOutput>(&output.stdout).map_err(|err| {
         error!("Failed to parse lsblk output: {}", err);
         DrivesError::ParseError
     })?;
@@ -101,66 +102,55 @@ pub fn mount_drive(path: &String, name: &String) -> DrivesResultEmpty {
         })?;
     }
 
-    let mount_path_str = mount_path.to_str().ok_or_else(|| DrivesError::MountError)?;
+    let mount_path = mount_path.to_string_lossy();
 
     // Wrapping mount path in quotations to prevent errors
-    let mount_path_str = format!("\"{}\"", mount_path_str);
+    let mount_path = format!("\"{}\"", mount_path);
 
     let output = Command::new("mount")
         .args([
-            "-o",
-            "rw", /* Mount as Read/Write*/
-            path,
-            &mount_path_str,
+            "-o",        // Specify mount options
+            "rw",        // Mount in Read Write mode
+            path,        // Drive path (e.g. /dev/sda1)
+            &mount_path, // Path to mount the drive to
         ])
         .output()
         .map_err(|err| {
             error!("Failed to execute mount command: {}", err);
             DrivesError::IOError
         })?;
-
-    let status = output.status;
-
-    if !status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-
-        warn!("Failed to mount drive {}", stderr);
-
-        Err(DrivesError::MountError)
-    } else {
-        chown_mounted_drive(&mount_path_str)?;
-
-        Ok(())
-    }
+    status_result(output, |err| {
+        // mount: {MOUNT_POINT}: special device /dev/sda1 does not exist.
+        warn!("Failed to mount drive: {}", err);
+        DrivesError::MountError
+    })?;
+    chown_mounted_drive(&mount_path)?;
+    Ok(())
 }
 
-fn chown_mounted_drive(path: &str) -> DrivesResultEmpty {
+fn chown_mounted_drive(path: &str) -> Result<(), DrivesError> {
     let output = Command::new("chmod")
         .args([
-            "-R",   /* Recursive ownership change */
-            "a+rw", /* Read/Write*/
-            path,   /* Safe version of path */
+            "-R",   // Apply the changes recursively
+            "a+rw", // Add Read+Write permissions to all users
+            path,   // Path on disk to chown should be wrapped in double quotes
         ])
         .output()
         .map_err(|err| {
-            error!("Failed to execute chmod command: {}", err);
+            error!("Failed to execute chmod: {}", err);
             DrivesError::IOError
         })?;
 
-    let status = output.status;
+    status_result(output, |err| {
+        // [Directory doesn't exist] chmod: cannot access '{}': No such file or directory
 
-    if !status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-
-        warn!("Failed to change mounted drive permissions {}", stderr);
-        Err(DrivesError::MountError)
-    } else {
-        Ok(())
-    }
+        warn!("Failed to chown mount directory: {}", err);
+        DrivesError::MountError
+    })
 }
 
 /// Unmounts the provided drive and removes it from the samba share
-pub fn unmount_drive(path: &String, name: &String) -> DrivesResultEmpty {
+pub fn unmount_drive(path: &String, name: &String) -> Result<(), DrivesError> {
     let output = Command::new("umount")
         .args([path])
         .output()
@@ -181,17 +171,14 @@ pub fn unmount_drive(path: &String, name: &String) -> DrivesResultEmpty {
         }
     }
 
-    let status = output.status;
+    status_result(output, |err| {
+        // [Part of device doesnt exist] umount: /dev/sda1: no mount point specified.
+        // [Device doesnt exist] umount: /dev/sdb: not mounted.
 
-    if !status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        if stderr.contains("target is busy") {
-            Err(DrivesError::TargetBusy)
+        if err.contains("target is busy") {
+            DrivesError::TargetBusy
         } else {
-            warn!("Failed to unmount drive {}", stderr);
-            Err(DrivesError::UnmountError)
+            DrivesError::UnmountError
         }
-    } else {
-        Ok(())
-    }
+    })
 }

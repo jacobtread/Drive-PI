@@ -4,6 +4,7 @@ pub mod files;
 use actix_web::web::Json;
 use log::warn;
 use rand::{thread_rng, Rng};
+use std::process::Output;
 
 const ENV_PORT_KEY: &str = "DRIVEPI_PORT";
 const DEFAULT_PORT: u16 = 80;
@@ -61,4 +62,14 @@ pub fn ok_json<V, E>(value: V) -> Result<Json<V>, E> {
 
 pub fn ok_json_empty<E>() -> Result<Json<()>, E> {
     return Ok(Json(()));
+}
+
+#[inline]
+pub fn status_result<F, O: FnOnce(&str) -> F>(output: Output, op: O) -> Result<(), F> {
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(op(&stderr))
+    }
 }
