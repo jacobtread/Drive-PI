@@ -36,7 +36,7 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         let cors = Cors::permissive();
-        let auth_store_data = Data::new(auth_store.clone());
+        let auth_store_data = Data::from(auth_store.clone());
         App::new()
             .wrap(cors)
             .app_data(auth_store_data)

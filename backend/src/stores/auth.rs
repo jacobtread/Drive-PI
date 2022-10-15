@@ -41,7 +41,7 @@ pub struct TokenData {
 }
 
 pub type AuthStoreSafe = Arc<Mutex<AuthStore>>;
-pub type AuthStoreData = Data<AuthStoreSafe>;
+pub type AuthStoreData = Data<Mutex<AuthStore>>;
 
 impl AuthStore {
     /// Creates a new instance of the auth store using the
