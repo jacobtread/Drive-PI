@@ -113,6 +113,13 @@ samba_config="[global]
    path = $path/mount
    read only = no
    browsable = yes
+
+[guest]
+   comment = DrivePI guest share
+   path = $path/mount
+   read only = yes
+   guest ok = yes
+   browsable = yes
 "
 
 echo "Writing samba config"
