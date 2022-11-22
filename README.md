@@ -33,6 +33,11 @@ This Repository is a monorepo for both the backend and frontend of the app. The 
 | RUST_LOG                  | drivepi=info  | Logging crate configuration                    |
 | RUST_LOG_STYLE            | always        | Whether to enable colored logging output       |
 
+## Extra
+Raspberry PI compiler toolchains for Windows https://gnutoolchains.com/raspberry/ easiest way 
+to cross compile for the Raspberry PI from windows
+
+
 ## Screenshots
 
 ![Auth Screenshot](assets/screenshots/auth.png)
