@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use std::ops::Add;
-use std::sync::{Arc, Mutex, RwLock};
+
 use std::time::{Duration, SystemTime};
 
-use actix_web::web::Data;
+use tokio::sync::RwLock;
 
-use crate::models::errors::AuthStoreError;
 use crate::utils::{create_character_set, create_random_string};
 
 /// Default store credentials
@@ -31,31 +30,24 @@ pub struct AuthStore {
     tokens: RwLock<HashMap<String, SystemTime>>,
 }
 
-// Type alias for results that can result in AuthError's
-type AuthResult<T> = Result<T, AuthStoreError>;
-
 /// Structure for a token to expiry time mapping
 pub struct TokenData {
     pub token: String,
     pub expiry_time: SystemTime,
 }
 
-pub type AuthStoreSafe = Arc<Mutex<AuthStore>>;
-pub type AuthStoreData = Data<Mutex<AuthStore>>;
-
 impl AuthStore {
     /// Creates a new instance of the auth store using the
     /// provided username and password as the credentials.
-    pub fn create() -> AuthStoreSafe {
+    pub fn new() -> AuthStore {
         let username = std::env::var(ENV_USERNAME_KEY).unwrap_or(String::from(DEFAULT_USERNAME));
-
         let password = std::env::var(ENV_PASSWORD_KEY).unwrap_or(String::from(DEFAULT_PASSWORD));
 
-        Arc::new(Mutex::new(Self {
+        Self {
             username,
             password,
             tokens: RwLock::new(HashMap::new()),
-        }))
+        }
     }
 
     /// Checks whether the provided username and password
@@ -65,64 +57,53 @@ impl AuthStore {
     }
 
     /// Retrieves the expiry time for the provided token
-    pub fn get_token_expiry(&self, token: &str) -> AuthResult<Option<SystemTime>> {
-        let tokens = self
-            .tokens
-            .read()
-            .map_err(|_| AuthStoreError::ReadFailure)?;
+    pub async fn get_token_expiry(&self, token: &str) -> Option<SystemTime> {
+        let tokens = &*self.tokens.read().await;
         match tokens.get(token) {
-            None => Ok(None),
-            Some(expiry_time) => Ok(Some(expiry_time.clone())),
+            None => None,
+            Some(expiry_time) => Some(expiry_time.clone()),
         }
     }
 
     /// Removes the provided token from the valid tokens map
-    pub fn remove_token(&mut self, token: &str) -> AuthResult<()> {
-        let mut tokens = self
-            .tokens
-            .write()
-            .map_err(|_| AuthStoreError::RemoveFailure)?;
+    pub async fn remove_token(&self, token: &str) {
+        let tokens = &mut *self.tokens.write().await;
         tokens.remove(token);
-        Ok(())
     }
 
     /// Adds the provided token into the tokens map with its
     /// provided expiry time.
-    fn add_token(&mut self, token: String, expiry_time: SystemTime) -> AuthResult<()> {
-        let mut tokens = self
-            .tokens
-            .write()
-            .map_err(|_| AuthStoreError::AddFailure)?;
+    async fn add_token(&self, token: String, expiry_time: SystemTime) {
+        let tokens = &mut *self.tokens.write().await;
         tokens.insert(token, expiry_time);
-        Ok(())
     }
 
     /// Checks whether the token exists in the tokens map and
     /// will remove the token if the token is expired returning
     /// whether the token is valid
-    pub fn check_token(&mut self, token: &str) -> AuthResult<bool> {
-        let expiry_time = self.get_token_expiry(token)?;
+    pub async fn check_token(&self, token: &str) -> bool {
+        let expiry_time = self.get_token_expiry(token).await;
         match expiry_time {
             Some(expiry_time) => {
                 let current_time = SystemTime::now();
-                Ok(if current_time >= expiry_time {
+                if current_time >= expiry_time {
                     // Remove expired token
-                    self.remove_token(token)?;
+                    self.remove_token(token).await;
                     false
                 } else {
                     true
-                })
+                }
             }
-            None => Ok(false),
+            None => false,
         }
     }
 
     /// Creates a new unique token and inserts it into the tokens map
-    pub fn create_token(&mut self) -> AuthResult<TokenData> {
+    pub async fn create_token(&self) -> TokenData {
         let character_set = create_character_set();
         loop {
             let token = create_random_string(&character_set, TOKEN_LENGTH);
-            let expiry_time = self.get_token_expiry(&token)?;
+            let expiry_time = self.get_token_expiry(&token).await;
 
             // If the token exists continue attempting to create tokens
             if expiry_time.is_some() {
@@ -134,9 +115,9 @@ impl AuthStore {
             let expiry_duration = Duration::from_secs(TOKEN_EXPIRY_TIME);
             let expiry_time = current_time.add(expiry_duration);
 
-            self.add_token(token.clone(), expiry_time.clone())?;
+            self.add_token(token.clone(), expiry_time.clone()).await;
 
-            return Ok(TokenData { token, expiry_time });
+            return TokenData { token, expiry_time };
         }
     }
 }

@@ -1,14 +1,14 @@
 use std::time::{Duration, UNIX_EPOCH};
 
 use crate::define_routes;
-use actix_web::web::Json;
+use actix_web::web::{Data, Json};
 use actix_web::{delete, get, post, web, HttpRequest};
 use log::{info, warn};
 
 use crate::middleware::auth::TOKEN_HEADER;
 use crate::models::auth::{AuthRequest, CheckResponse, TokenDataResponse};
 use crate::models::errors::AuthError;
-use crate::stores::auth::AuthStoreData;
+use crate::stores::auth::AuthStore;
 use crate::utils::{ok_json, ok_json_empty, JsonResult};
 
 define_routes!(auth, check_auth, delete_token);
@@ -20,14 +20,12 @@ type AuthResultEmpty = AuthResult<()>;
 pub async fn auth(
     req: HttpRequest,
     body: Json<AuthRequest>,
-    auth_store: AuthStoreData,
+    auth_store: Data<AuthStore>,
 ) -> AuthResult<TokenDataResponse> {
-    let mut auth_store = auth_store.lock()?;
-
     let is_credentials = auth_store.is_credentials(&body.username, &body.password);
 
     if is_credentials {
-        let token_data = auth_store.create_token()?;
+        let token_data = auth_store.create_token().await;
         let time_elapsed = token_data.expiry_time.duration_since(UNIX_EPOCH)?;
 
         if let Some(address) = req.peer_addr() {
@@ -53,20 +51,25 @@ pub async fn auth(
 }
 
 #[get("/auth")]
-pub async fn check_auth(req: HttpRequest, auth_store: AuthStoreData) -> AuthResult<CheckResponse> {
+pub async fn check_auth(
+    req: HttpRequest,
+    auth_store: Data<AuthStore>,
+) -> AuthResult<CheckResponse> {
     let token_header = req
         .headers()
         .get(TOKEN_HEADER)
         .ok_or(AuthError::MissingToken)?;
 
     let token = token_header.to_str()?;
-    let auth_store = auth_store.lock()?;
-    let expiry_time = auth_store.get_token_expiry(token)?.map(|token_expiry| {
-        token_expiry
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or(Duration::from_millis(0))
-            .as_millis()
-    });
+    let expiry_time = auth_store
+        .get_token_expiry(token)
+        .await
+        .map(|token_expiry| {
+            token_expiry
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or(Duration::from_millis(0))
+                .as_millis()
+        });
 
     ok_json(CheckResponse {
         valid: expiry_time.is_some(),
@@ -75,14 +78,13 @@ pub async fn check_auth(req: HttpRequest, auth_store: AuthStoreData) -> AuthResu
 }
 
 #[delete("/auth")]
-pub async fn delete_token(req: HttpRequest, auth_store: AuthStoreData) -> AuthResultEmpty {
+pub async fn delete_token(req: HttpRequest, auth_store: Data<AuthStore>) -> AuthResultEmpty {
     let token_header = req
         .headers()
         .get(TOKEN_HEADER)
         .ok_or(AuthError::MissingToken)?;
     let token = token_header.to_str()?;
-    let mut auth_store = auth_store.lock()?;
-    auth_store.remove_token(token)?;
+    auth_store.remove_token(token).await;
     if let Some(address) = req.peer_addr() {
         info!(
             "Deleted authentication token {} for {}",

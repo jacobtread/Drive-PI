@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use actix_cors::Cors;
 use actix_web::web::{scope, Data};
 use actix_web::{App, HttpServer};
@@ -24,7 +26,8 @@ async fn main() -> std::io::Result<()> {
     info!("Loaded environment variables");
 
     let port = get_env_port();
-    let auth_store = AuthStore::create();
+    let auth_store = AuthStore::new();
+    let auth_store = Arc::new(auth_store);
 
     info!("Drive-PI starting on port {} if you are", port);
     info!("running this on the Raspberry PI access point ");

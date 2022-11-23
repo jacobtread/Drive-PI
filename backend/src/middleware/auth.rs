@@ -3,21 +3,22 @@ use futures::future::LocalBoxFuture;
 use futures::FutureExt;
 use std::future::{ready, Ready};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::models::errors::{server_error, AuthError};
-use crate::stores::auth::AuthStoreSafe;
+use crate::stores::auth::AuthStore;
 
 pub const TOKEN_HEADER: &str = "X-Token";
 
 /// Struct representing a the base middleware for
 /// authentication tokens
 pub struct AuthMiddleware {
-    auth_store: AuthStoreSafe,
+    auth_store: Arc<AuthStore>,
 }
 
 impl AuthMiddleware {
     // Constructor function for creating a new middleware
-    pub fn new(auth_store: AuthStoreSafe) -> Self {
+    pub fn new(auth_store: Arc<AuthStore>) -> Self {
         Self { auth_store }
     }
 }
@@ -46,7 +47,7 @@ where
 
 pub struct AuthMiddlewareInner<S> {
     service: Rc<S>,
-    auth_store: AuthStoreSafe,
+    auth_store: Arc<AuthStore>,
 }
 
 impl<S, B> Service<ServiceRequest> for AuthMiddlewareInner<S>
@@ -68,12 +69,8 @@ where
         async move {
             let headers = req.headers();
             let token_header = headers.get(TOKEN_HEADER).ok_or(AuthError::MissingToken)?;
-
             let token = token_header.to_str().map_err(server_error)?;
-
-            let mut auth_store = auth_store.lock().map_err(server_error)?;
-
-            let is_valid = auth_store.check_token(token).map_err(server_error)?;
+            let is_valid = auth_store.check_token(token).await;
             if is_valid {
                 service.call(req).await
             } else {

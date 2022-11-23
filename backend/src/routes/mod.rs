@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use actix_web::body::BoxBody;
 use actix_web::dev::{ServiceFactory, ServiceRequest, ServiceResponse};
 use actix_web::{Error, Scope};
 
 use crate::middleware::auth::AuthMiddleware;
-use crate::stores::auth::AuthStoreSafe;
+use crate::stores::auth::AuthStore;
 
 pub mod app;
 pub mod auth;
@@ -13,7 +15,7 @@ pub mod files;
 /// Creates a scope that is protected by the auth store
 /// authentication middleware
 pub fn auth_scope(
-    auth_store: AuthStoreSafe,
+    auth_store: Arc<AuthStore>,
 ) -> Scope<
     impl ServiceFactory<
         ServiceRequest,

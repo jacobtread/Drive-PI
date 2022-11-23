@@ -42,25 +42,6 @@ impl Display for AuthError {
     }
 }
 
-/// Error type for errors that occurred on the
-/// auth store.
-#[derive(Debug)]
-pub enum AuthStoreError {
-    ReadFailure,
-    AddFailure,
-    RemoveFailure,
-}
-
-impl Display for AuthStoreError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            AuthStoreError::ReadFailure => f.write_str("read failure"),
-            AuthStoreError::AddFailure => f.write_str("add failure"),
-            AuthStoreError::RemoveFailure => f.write_str("remove failure"),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub enum DrivesError {
     ParseError,
@@ -152,12 +133,6 @@ pub fn server_error<E>(_: E) -> GenericError {
 impl From<GenericError> for AuthError {
     fn from(value: GenericError) -> Self {
         AuthError::GenericError(value)
-    }
-}
-
-impl From<AuthStoreError> for AuthError {
-    fn from(_: AuthStoreError) -> Self {
-        AuthError::GenericError(GenericError::ServerError)
     }
 }
 
